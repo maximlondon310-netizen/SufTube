@@ -1,0 +1,1994 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>SufTube — Кино на вечер</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --card-width: 300px;
+            --card-gap: 18px;
+            --focus-color: #ffb84d;
+            --accent-warm: #ff8c42;
+            --accent-glow: rgba(255, 184, 77, 0.4);
+            --bg: #0a0a0f;
+            --bg-deep: #050508;
+            --surface: #14141c;
+            --surface-hover: #1c1c26;
+            --text-dim: #8a8a9a;
+        }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+            background: var(--bg);
+            color: #fff;
+            overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
+            min-height: 100vh;
+        }
+
+        /* ===== АТМОСФЕРНЫЙ ФОН ===== */
+        body::before {
+            content: '';
+            position: fixed; inset: 0; z-index: 0;
+            background:
+                radial-gradient(ellipse at top left, rgba(255,140,66,0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at bottom right, rgba(80,60,200,0.06) 0%, transparent 50%),
+                radial-gradient(ellipse at center, rgba(30,20,50,0.3) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        /* ===== ШАПКА ===== */
+        header {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+            display: flex; align-items: center; gap: 30px;
+            padding: 18px 40px;
+            background: linear-gradient(180deg, rgba(10,10,15,0.98) 0%, rgba(10,10,15,0.85) 60%, transparent 100%);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .burger {
+            display: none;
+            width: 44px; height: 44px; flex-shrink: 0;
+            background: rgba(255,255,255,0.06);
+            border: 2px solid transparent; border-radius: 10px;
+            cursor: pointer; transition: 0.25s;
+            align-items: center; justify-content: center;
+            flex-direction: column; gap: 5px;
+        }
+        .burger:hover, .burger:focus { background: rgba(255,184,77,0.15); border-color: var(--focus-color); }
+        .burger span {
+            display: block; width: 20px; height: 2px;
+            background: #fff; border-radius: 2px; transition: 0.3s;
+        }
+        .burger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+        .burger.open span:nth-child(2) { opacity: 0; }
+        .burger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+        .logo {
+            font-size: 26px; font-weight: 900;
+            background: linear-gradient(135deg, #ffb84d, #ff8c42);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            cursor: pointer; flex-shrink: 0;
+            letter-spacing: -0.5px;
+        }
+        .logo span { color: #fff; -webkit-text-fill-color: #fff; }
+
+        nav { display: flex; gap: 20px; font-size: 15px; }
+        nav a {
+            color: #999; text-decoration: none; cursor: pointer;
+            padding: 8px 14px; border-radius: 10px; transition: 0.25s;
+            font-weight: 500;
+        }
+        nav a:hover, nav a.active {
+            color: #fff;
+            background: rgba(255,184,77,0.12);
+            box-shadow: 0 0 20px rgba(255,184,77,0.15);
+        }
+        nav a.active { color: var(--focus-color); }
+
+        .search-wrap { margin-left: auto; position: relative; width: 340px; }
+        .search-wrap input {
+            width: 100%; padding: 12px 18px 12px 42px; font-size: 15px;
+            border: 2px solid transparent; border-radius: 12px;
+            background: rgba(255,255,255,0.06); color: #fff; outline: none;
+            transition: 0.25s;
+        }
+        .search-wrap input:focus {
+            background: rgba(255,255,255,0.1);
+            border-color: var(--focus-color);
+            box-shadow: 0 0 20px rgba(255,184,77,0.2);
+        }
+        .search-wrap input::placeholder { color: #666; }
+        .search-wrap::before {
+            content: '🔍'; position: absolute; left: 14px; top: 50%;
+            transform: translateY(-50%); font-size: 14px; opacity: 0.5;
+        }
+
+        /* ===== МОБИЛЬНОЕ МЕНЮ ===== */
+        .mobile-menu {
+            display: none; position: fixed; top: 0; left: 0; bottom: 0;
+            width: 280px; max-width: 85vw; z-index: 200;
+            background: linear-gradient(180deg, #14141c 0%, #0a0a0f 100%);
+            padding: 80px 20px 30px;
+            transform: translateX(-100%); transition: transform 0.3s ease;
+            box-shadow: 4px 0 40px rgba(0,0,0,0.9);
+            overflow-y: auto;
+        }
+        .mobile-menu.open { transform: translateX(0); }
+        .mobile-menu a {
+            display: block; padding: 16px 20px; margin-bottom: 6px;
+            color: #ccc; text-decoration: none; font-size: 17px; font-weight: 600;
+            border-radius: 12px; transition: 0.25s; cursor: pointer;
+        }
+        .mobile-menu a:hover, .mobile-menu a:active, .mobile-menu a.active {
+            background: rgba(255,184,77,0.15); color: var(--focus-color);
+        }
+        .mobile-menu .divider {
+            height: 1px; background: rgba(255,255,255,0.08); margin: 16px 8px;
+        }
+        .mobile-menu .menu-search {
+            width: 100%; padding: 12px 16px 12px 42px; font-size: 15px;
+            border: 2px solid transparent; border-radius: 12px;
+            background: rgba(255,255,255,0.06); color: #fff; outline: none;
+            margin-bottom: 16px;
+        }
+        .mobile-menu .menu-search:focus { border-color: var(--focus-color); }
+
+        .menu-overlay {
+            display: none; position: fixed; inset: 0; z-index: 150;
+            background: rgba(0,0,0,0.75); backdrop-filter: blur(4px);
+            opacity: 0; transition: opacity 0.3s;
+        }
+        .menu-overlay.show { display: block; opacity: 1; }
+
+        /* ===== БАННЕР ===== */
+        .hero {
+            position: relative; height: 620px;
+            display: flex; align-items: flex-end;
+            padding: 0 40px 80px;
+            background:
+                radial-gradient(circle at 30% 40%, rgba(255,140,66,0.15) 0%, transparent 60%),
+                radial-gradient(circle at 70% 60%, rgba(80,60,200,0.15) 0%, transparent 60%),
+                linear-gradient(135deg, #1a1028 0%, #0f0a1f 50%, #050508 100%);
+            overflow: hidden;
+        }
+        .hero::before {
+            content: '';
+            position: absolute; inset: 0;
+            background-image:
+                radial-gradient(1px 1px at 20% 30%, rgba(255,255,255,0.4), transparent),
+                radial-gradient(1px 1px at 60% 70%, rgba(255,255,255,0.3), transparent),
+                radial-gradient(1px 1px at 80% 20%, rgba(255,255,255,0.4), transparent),
+                radial-gradient(1px 1px at 40% 80%, rgba(255,255,255,0.3), transparent),
+                radial-gradient(1px 1px at 90% 50%, rgba(255,255,255,0.4), transparent),
+                radial-gradient(1px 1px at 10% 60%, rgba(255,255,255,0.3), transparent);
+            animation: twinkle 4s ease-in-out infinite;
+            pointer-events: none;
+        }
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
+        }
+        .hero::after {
+            content: ''; position: absolute; inset: 0;
+            background:
+                linear-gradient(90deg, rgba(10,10,15,0.95) 0%, rgba(10,10,15,0.6) 50%, rgba(10,10,15,0.2) 100%),
+                linear-gradient(0deg, rgba(10,10,15,1) 0%, transparent 50%);
+            pointer-events: none;
+        }
+        .hero-content { position: relative; z-index: 2; max-width: 620px; }
+        .hero-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #ffb84d, #ff8c42);
+            color: #000;
+            font-size: 12px; font-weight: 800;
+            padding: 6px 14px; border-radius: 20px;
+            margin-bottom: 20px; text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 4px 20px rgba(255,140,66,0.4);
+        }
+        .hero h1 {
+            font-size: 56px; font-weight: 800;
+            line-height: 1.05; margin-bottom: 20px;
+            text-shadow: 0 4px 30px rgba(0,0,0,0.8);
+            background: linear-gradient(135deg, #fff 0%, #ffd9a8 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .hero p {
+            font-size: 17px; color: #b8b8c4;
+            line-height: 1.6; margin-bottom: 32px;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+        }
+        .hero-buttons { display: flex; gap: 14px; }
+
+        .btn-play, .btn-more {
+            display: inline-flex; align-items: center; gap: 10px;
+            font-size: 16px; font-weight: 700;
+            padding: 15px 34px;
+            border: none; border-radius: 12px;
+            cursor: pointer; transition: 0.25s;
+            position: relative; overflow: hidden;
+        }
+        .btn-play {
+            background: linear-gradient(135deg, #ffb84d, #ff8c42);
+            color: #000;
+            box-shadow: 0 8px 30px rgba(255,140,66,0.4);
+        }
+        .btn-play:hover, .btn-play:focus {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px rgba(255,140,66,0.6);
+            outline: 2px solid #fff;
+        }
+        .btn-more {
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.15);
+        }
+        .btn-more:hover, .btn-more:focus {
+            background: rgba(255,255,255,0.18);
+            outline: 2px solid #fff;
+        }
+
+        /* ===== КОНТЕНТ ===== */
+        main { padding: 0 0 80px; margin-top: -40px; position: relative; z-index: 5; }
+        .section { margin-bottom: 60px; }
+        .section-header {
+            display: flex; align-items: center;
+            padding: 0 40px; margin-bottom: 22px;
+        }
+        .section-header h2 {
+            font-size: 26px; font-weight: 800;
+            letter-spacing: -0.5px;
+            position: relative;
+            padding-left: 16px;
+        }
+        .section-header h2::before {
+            content: '';
+            position: absolute; left: 0; top: 50%;
+            transform: translateY(-50%);
+            width: 4px; height: 70%;
+            background: linear-gradient(180deg, #ffb84d, #ff8c42);
+            border-radius: 2px;
+            box-shadow: 0 0 15px rgba(255,140,66,0.6);
+        }
+        .section-header .count { color: var(--text-dim); font-size: 15px; font-weight: 400; margin-left: 10px; }
+
+        .scroll-row {
+            display: flex; gap: var(--card-gap); overflow-x: auto;
+            padding: 12px 40px 24px; scroll-behavior: smooth;
+            scrollbar-width: thin; scrollbar-color: #333 transparent;
+        }
+        .scroll-row::-webkit-scrollbar { height: 6px; }
+        .scroll-row::-webkit-scrollbar-thumb {
+            background: linear-gradient(90deg, #ffb84d, #ff8c42);
+            border-radius: 3px;
+        }
+        .scroll-row::-webkit-scrollbar-track { background: #1a1a20; border-radius: 3px; }
+
+        /* ===== КАРТОЧКА ===== */
+        .card {
+            flex-shrink: 0; width: var(--card-width);
+            background: var(--surface);
+            border-radius: 16px; overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1),
+                        box-shadow 0.35s,
+                        border-color 0.25s;
+            position: relative;
+            border: 2px solid rgba(255,255,255,0.05);
+            outline: none;
+        }
+        .card::before {
+            content: '';
+            position: absolute; inset: -2px;
+            border-radius: 16px;
+            background: linear-gradient(135deg, rgba(255,184,77,0.6), rgba(255,140,66,0.3), transparent 70%);
+            opacity: 0;
+            z-index: -1;
+            transition: opacity 0.35s;
+            filter: blur(20px);
+        }
+        .card:hover, .card:focus {
+            transform: translateY(-8px) scale(1.03);
+            box-shadow: 0 24px 60px rgba(0,0,0,0.8),
+                        0 0 40px rgba(255,140,66,0.15);
+            z-index: 10;
+            border-color: rgba(255,184,77,0.3);
+        }
+        .card:hover::before, .card:focus::before { opacity: 1; }
+        .card.tv-focus {
+            border-color: var(--focus-color);
+            transform: translateY(-8px) scale(1.06);
+            box-shadow: 0 0 0 4px rgba(255,184,77,0.5),
+                        0 24px 60px rgba(0,0,0,0.9),
+                        0 0 60px rgba(255,140,66,0.3);
+            z-index: 20;
+        }
+        .card.tv-focus::before { opacity: 1; }
+
+        .card-poster {
+            position: relative; width: 100%; aspect-ratio: 16/9;
+            background: #0a0a0f; overflow: hidden;
+        }
+        .card-poster img {
+            width: 100%; height: 100%; object-fit: cover;
+            display: block;
+            transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1),
+                        filter 0.5s;
+            filter: brightness(0.9);
+        }
+        .card:hover .card-poster img,
+        .card.tv-focus .card-poster img {
+            transform: scale(1.08);
+            filter: brightness(1.1);
+        }
+        .card-overlay {
+            position: absolute; inset: 0;
+            background: linear-gradient(0deg, rgba(0,0,0,0.9) 0%, transparent 60%);
+            display: flex; align-items: center; justify-content: center;
+            opacity: 0; transition: opacity 0.35s;
+        }
+        .card:hover .card-overlay,
+        .card.tv-focus .card-overlay { opacity: 1; }
+        .play-icon {
+            width: 64px; height: 64px;
+            background: linear-gradient(135deg, #ffb84d, #ff8c42);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 24px; color: #000;
+            padding-left: 5px;
+            box-shadow: 0 8px 30px rgba(255,140,66,0.6),
+                        0 0 0 0 rgba(255,184,77,0.7);
+            animation: pulseGlow 2s ease-in-out infinite;
+        }
+        @keyframes pulseGlow {
+            0%, 100% {
+                box-shadow: 0 8px 30px rgba(255,140,66,0.6),
+                            0 0 0 0 rgba(255,184,77,0.7);
+            }
+            50% {
+                box-shadow: 0 8px 30px rgba(255,140,66,0.8),
+                            0 0 0 15px rgba(255,184,77,0);
+            }
+        }
+
+        .card-info { padding: 16px 18px 18px; }
+        .card-info h3 {
+            font-size: 15px; font-weight: 700;
+            margin-bottom: 6px; line-height: 1.35;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            color: #f0f0f5;
+        }
+        .card-info .meta {
+            font-size: 13px; color: var(--text-dim);
+            display: -webkit-box;
+            -webkit-line-clamp: 1;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .age-badge {
+            display: inline-block;
+            background: rgba(255,184,77,0.15);
+            color: var(--focus-color);
+            font-size: 10px; font-weight: 800;
+            padding: 3px 8px; border-radius: 6px;
+            margin-left: 8px; vertical-align: middle;
+            border: 1px solid rgba(255,184,77,0.3);
+        }
+
+        /* ===== ФИЛЬТРЫ ===== */
+        .genre-filters {
+            display: flex; gap: 10px;
+            padding: 0 40px 24px;
+            flex-wrap: wrap;
+        }
+        .genre-btn {
+            background: rgba(255,255,255,0.05);
+            color: #bbb;
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 24px;
+            padding: 10px 20px;
+            font-size: 14px; font-weight: 600;
+            cursor: pointer;
+            transition: 0.25s;
+        }
+        .genre-btn:hover, .genre-btn:focus {
+            background: rgba(255,184,77,0.12);
+            color: #fff;
+            border-color: rgba(255,184,77,0.3);
+            outline: none;
+        }
+        .genre-btn.active {
+            background: linear-gradient(135deg, #ffb84d, #ff8c42);
+            color: #000;
+            border-color: transparent;
+            box-shadow: 0 6px 20px rgba(255,140,66,0.4);
+        }
+
+        /* =============================================
+           УНИВЕРСАЛЬНАЯ КНОПКА НАЗАД
+           ============================================= */
+        .universal-back-btn {
+            position: fixed;
+            top: 24px; left: 24px;
+            z-index: 9999;
+            display: none;
+            align-items: center; gap: 10px;
+            background: rgba(10,10,15,0.85);
+            color: #fff;
+            border: 2px solid rgba(255,184,77,0.4);
+            border-radius: 14px;
+            padding: 14px 22px;
+            font-size: 16px; font-weight: 700;
+            cursor: pointer;
+            transition: all 0.25s;
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.6),
+                        0 0 30px rgba(255,140,66,0.2);
+        }
+        .universal-back-btn.show { display: flex; }
+        .universal-back-btn:hover,
+        .universal-back-btn:focus {
+            background: linear-gradient(135deg, #ffb84d, #ff8c42);
+            color: #000;
+            border-color: var(--focus-color);
+            outline: 2px solid #fff;
+            transform: translateX(-4px);
+            box-shadow: 0 8px 30px rgba(255,140,66,0.6);
+        }
+        .universal-back-btn .back-icon {
+            font-size: 18px; font-weight: 900;
+            transition: transform 0.25s;
+        }
+        .universal-back-btn:hover .back-icon { transform: translateX(-3px); }
+
+        @media (max-width: 700px) {
+            .universal-back-btn {
+                top: 12px; left: 12px;
+                padding: 10px 16px;
+                font-size: 14px;
+                border-radius: 12px;
+                gap: 6px;
+            }
+            .universal-back-btn .back-icon { font-size: 16px; }
+        }
+        @media (min-width: 1600px) {
+            .universal-back-btn {
+                top: 40px; left: 40px;
+                padding: 18px 32px;
+                font-size: 22px;
+                border-radius: 16px;
+            }
+            .universal-back-btn .back-icon { font-size: 24px; }
+        }
+
+        /* =============================================
+           ПЛЕЕРЫ
+           ============================================= */
+        .player-overlay { display: none; position: fixed; inset: 0; z-index: 2000; background: #000; }
+        .player-overlay.open { display: block; }
+        #playerStage { position: absolute; inset: 0; width: 100%; height: 100%; background: #000; }
+        #rutubePlayerContainer,
+        #rutubePlayerContainer iframe {
+            position: absolute; inset: 0;
+            width: 100% !important; height: 100% !important;
+            border: none;
+        }
+        #playerStage:fullscreen,
+        #playerStage:-webkit-full-screen { width: 100vw !important; height: 100vh !important; }
+
+        .player-controls {
+            position: fixed; bottom: 120px; left: 50%;
+            transform: translateX(-50%);
+            z-index: 2100; display: flex; gap: 14px;
+            opacity: 0; transition: opacity 0.3s;
+            pointer-events: none;
+        }
+        .player-controls.show { opacity: 1; pointer-events: auto; }
+        .ctrl-btn {
+            background: rgba(10,10,15,0.85);
+            color: #fff;
+            border: 2px solid rgba(255,255,255,0.2);
+            border-radius: 14px;
+            padding: 14px 24px;
+            font-size: 18px; font-weight: 700;
+            cursor: pointer;
+            transition: all 0.25s;
+            min-width: 100px;
+            backdrop-filter: blur(14px);
+        }
+        .ctrl-btn:hover, .ctrl-btn:focus {
+            background: linear-gradient(135deg, #ffb84d, #ff8c42);
+            color: #000;
+            border-color: var(--focus-color);
+            outline: 2px solid #fff;
+            transform: translateY(-2px);
+        }
+
+        /* =============================================
+           ТВ-СЕКЦИЯ
+           ============================================= */
+        .tv-section {
+            display: none;
+            padding: 110px 40px 60px;
+            min-height: 100vh;
+            position: relative; z-index: 5;
+        }
+        .tv-section.active { display: block; animation: fadeIn 0.4s ease; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .tv-header h2 {
+            font-size: 36px; font-weight: 800;
+            margin-bottom: 10px;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #fff, #ffd9a8);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .tv-hint-bar {
+            display: flex; gap: 12px;
+            color: var(--text-dim); font-size: 13px;
+            margin-bottom: 32px; flex-wrap: wrap;
+        }
+        .tv-hint-bar span {
+            background: rgba(255,255,255,0.05);
+            padding: 6px 14px;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.06);
+        }
+
+        .tv-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 18px;
+        }
+        .tv-card {
+            background: var(--surface);
+            border: 2px solid rgba(255,255,255,0.05);
+            border-radius: 16px;
+            padding: 24px 16px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+            text-align: center;
+            outline: none;
+            position: relative;
+            overflow: hidden;
+        }
+        .tv-card::before {
+            content: '';
+            position: absolute; inset: 0;
+            background: radial-gradient(circle at center, rgba(255,184,77,0.1) 0%, transparent 70%);
+            opacity: 0; transition: opacity 0.3s;
+        }
+        .tv-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.6),
+                        0 0 40px rgba(255,140,66,0.15);
+            border-color: rgba(255,184,77,0.3);
+        }
+        .tv-card:hover::before { opacity: 1; }
+        .tv-card.tv-focus {
+            border-color: var(--focus-color);
+            transform: translateY(-6px) scale(1.05);
+            box-shadow: 0 0 0 4px rgba(255,184,77,0.5),
+                        0 20px 50px rgba(0,0,0,0.8);
+            z-index: 20;
+        }
+        .tv-card.tv-focus::before { opacity: 1; }
+        .tv-card-logo {
+            width: 68px; height: 68px;
+            margin: 0 auto 14px;
+            border-radius: 14px;
+            background: linear-gradient(135deg, #ffb84d, #ff8c42);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 24px; font-weight: 900; color: #000;
+            box-shadow: 0 8px 24px rgba(255,140,66,0.35);
+            transition: transform 0.3s;
+        }
+        .tv-card:hover .tv-card-logo { transform: scale(1.1) rotate(-3deg); }
+        .tv-card-name {
+            font-size: 16px; font-weight: 700;
+            margin-bottom: 4px;
+            color: #f0f0f5;
+        }
+        .tv-card-group {
+            font-size: 12px; color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* ===== ТВ-ПЛЕЕР ===== */
+        .tv-player-overlay {
+            display: none; position: fixed; inset: 0;
+            z-index: 3000; background: #000;
+        }
+        .tv-player-overlay.open { display: block; }
+        #tvPlayerStage { position: absolute; inset: 0; }
+        #tvPlayerStage iframe,
+        #tvPlayerStage > div {
+            width: 100% !important;
+            height: 100% !important;
+            border: none;
+        }
+
+        .tv-player-top {
+            position: fixed; top: 80px; left: 30px; z-index: 3100;
+            background: rgba(10,10,15,0.85);
+            padding: 14px 26px;
+            border-radius: 12px;
+            font-size: 20px; font-weight: 700;
+            border: 1px solid rgba(255,184,77,0.3);
+            display: flex; align-items: center; gap: 14px;
+            backdrop-filter: blur(14px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.6),
+                        0 0 30px rgba(255,140,66,0.15);
+        }
+        .tv-player-top::before {
+            content: '';
+            width: 10px; height: 10px;
+            background: #ff2e2e;
+            border-radius: 50%;
+            animation: pulse 1.5s ease-in-out infinite;
+            box-shadow: 0 0 15px #ff2e2e;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(0.8); }
+        }
+
+        /* ===== НИЖНЯЯ ЛЕНТА КАНАЛОВ ===== */
+        .tv-channel-bar {
+            position: fixed; left: 0; right: 0; bottom: 0;
+            z-index: 3200;
+            background: linear-gradient(0deg, rgba(5,5,8,0.99) 0%, rgba(10,10,15,0.9) 80%, transparent 100%);
+            padding: 24px 0 36px;
+            transform: translateY(100%);
+            transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+            pointer-events: none;
+            backdrop-filter: blur(14px);
+        }
+        .tv-channel-bar.open {
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+        .tv-channel-bar-title {
+            color: var(--text-dim); font-size: 13px;
+            text-align: center; margin-bottom: 16px;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+        .tv-channel-list {
+            display: flex; gap: 16px;
+            overflow-x: auto; overflow-y: hidden;
+            padding: 0 40px 10px;
+            scroll-behavior: smooth;
+            scrollbar-width: none;
+        }
+        .tv-channel-list::-webkit-scrollbar { display: none; }
+
+        .tv-ch-item {
+            flex-shrink: 0;
+            width: 170px;
+            background: linear-gradient(180deg, #1a1a24, #14141c);
+            border: 2px solid rgba(255,255,255,0.06);
+            border-radius: 14px;
+            padding: 16px 10px;
+            cursor: pointer;
+            transition: 0.25s;
+            text-align: center;
+        }
+        .tv-ch-item:hover {
+            transform: translateY(-4px);
+            border-color: rgba(255,184,77,0.4);
+            box-shadow: 0 12px 30px rgba(0,0,0,0.6);
+        }
+        .tv-ch-item.current {
+            background: linear-gradient(180deg, rgba(255,184,77,0.18), rgba(255,140,66,0.08));
+            border-color: var(--focus-color);
+            box-shadow: 0 0 30px rgba(255,140,66,0.35);
+        }
+        .tv-ch-item.tv-nav-focus {
+            border-color: #fff;
+            transform: scale(1.1);
+            box-shadow: 0 0 0 3px var(--focus-color),
+                        0 16px 40px rgba(0,0,0,0.8),
+                        0 0 50px rgba(255,140,66,0.4);
+            z-index: 5;
+        }
+        .tv-ch-num {
+            color: #666; font-size: 11px;
+            font-weight: 700; margin-bottom: 6px;
+            letter-spacing: 1px;
+        }
+        .tv-ch-logo {
+            width: 54px; height: 54px;
+            margin: 0 auto 10px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #ffb84d, #ff8c42);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px; font-weight: 900; color: #000;
+            box-shadow: 0 6px 18px rgba(255,140,66,0.4);
+        }
+        .tv-ch-name {
+            font-size: 13px; font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            color: #e0e0e8;
+        }
+
+        .tv-bar-hint {
+            position: fixed; bottom: 24px; left: 50%;
+            transform: translateX(-50%);
+            z-index: 3150;
+            color: #999; font-size: 13px;
+            background: rgba(10,10,15,0.75);
+            padding: 10px 22px;
+            border-radius: 24px;
+            transition: opacity 0.3s;
+            pointer-events: none;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+        .tv-bar-hint.hidden { opacity: 0; }
+
+        /* ===== НИЧЕГО НЕ НАЙДЕНО ===== */
+        .no-results {
+            display: none; text-align: center;
+            padding: 100px 40px;
+            position: relative; z-index: 5;
+        }
+        .no-results .emoji {
+            font-size: 72px; margin-bottom: 20px;
+            filter: drop-shadow(0 8px 30px rgba(255,140,66,0.4));
+        }
+        .no-results h2 { font-size: 26px; margin-bottom: 12px; }
+        .no-results p { color: var(--text-dim); margin-bottom: 32px; font-size: 15px; }
+        .btn-rutube {
+            display: inline-flex; align-items: center; gap: 10px;
+            background: linear-gradient(135deg, #ffb84d, #ff8c42);
+            color: #000; font-size: 16px; font-weight: 700;
+            padding: 15px 34px;
+            border: none; border-radius: 12px;
+            cursor: pointer; text-decoration: none;
+            transition: 0.25s;
+            box-shadow: 0 8px 30px rgba(255,140,66,0.4);
+        }
+        .btn-rutube:hover, .btn-rutube:focus {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px rgba(255,140,66,0.6);
+            outline: 2px solid #fff;
+        }
+
+        /* ===== ЗАГРУЗКА ===== */
+        .loader {
+            position: fixed; inset: 0; z-index: 2500;
+            background: radial-gradient(circle at center, #1a1028 0%, #000 100%);
+            display: none; align-items: center; justify-content: center;
+            flex-direction: column; gap: 24px;
+        }
+        .loader.show { display: flex; }
+        .loader-spinner {
+            width: 70px; height: 70px;
+            border: 4px solid rgba(255,184,77,0.15);
+            border-top-color: var(--focus-color);
+            border-radius: 50%;
+            animation: spin 0.9s linear infinite;
+            box-shadow: 0 0 40px rgba(255,140,66,0.3);
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loader-text {
+            color: #b8b8c4; font-size: 16px;
+            letter-spacing: 1px;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        /* ===== ПОВЕРНИТЕ ТЕЛЕФОН ===== */
+        .rotate-hint {
+            position: fixed; inset: 0; z-index: 2600;
+            display: none; align-items: center; justify-content: center;
+            flex-direction: column; gap: 20px;
+            background: radial-gradient(circle at center, #1a1028 0%, #000 100%);
+            color: #fff; text-align: center; padding: 40px;
+        }
+        .rotate-hint.show { display: flex; }
+        .rotate-hint .icon {
+            font-size: 72px;
+            animation: rotateHint 2s ease-in-out infinite;
+            filter: drop-shadow(0 8px 30px rgba(255,140,66,0.5));
+        }
+        @keyframes rotateHint {
+            0%, 100% { transform: rotate(0deg); }
+            50% { transform: rotate(90deg); }
+        }
+        .rotate-hint h2 { font-size: 24px; }
+        .rotate-hint p { color: var(--text-dim); font-size: 15px; max-width: 280px; line-height: 1.5; }
+
+        /* =============================================
+           АДАПТАЦИЯ
+           ============================================= */
+        @media (max-width: 1100px) {
+            :root { --card-width: 270px; --card-gap: 16px; }
+            .hero h1 { font-size: 42px; }
+            .search-wrap { width: 260px; }
+        }
+
+        @media (max-width: 700px) {
+            :root { --card-width: 240px; --card-gap: 14px; }
+
+            header { padding: 12px 16px; gap: 12px; }
+            .burger { display: flex; }
+            .logo { font-size: 20px; }
+            nav { display: none; }
+            .search-wrap { display: none; }
+
+            .mobile-menu { display: block; }
+
+            .hero { height: 420px; padding: 0 20px 50px; margin-top: 68px; }
+            .hero h1 { font-size: 30px; }
+            .hero p { font-size: 14px; margin-bottom: 22px; }
+            .hero-badge { font-size: 10px; padding: 5px 12px; margin-bottom: 14px; }
+            .hero-buttons { flex-wrap: wrap; gap: 10px; }
+            .btn-play, .btn-more { padding: 12px 22px; font-size: 14px; }
+
+            .section-header { padding: 0 20px; }
+            .section-header h2 { font-size: 20px; padding-left: 12px; }
+            .scroll-row { padding: 8px 20px 20px; }
+            .card-info h3 { font-size: 14px; }
+            .card-info .meta { font-size: 12px; }
+
+            .genre-filters { padding: 0 20px 18px; gap: 6px; }
+            .genre-btn { padding: 8px 14px; font-size: 12px; }
+
+            .player-controls { bottom: 60px; gap: 10px; }
+            .ctrl-btn { padding: 10px 14px; font-size: 14px; min-width: 70px; }
+
+            .tv-section { padding: 80px 16px 40px; }
+            .tv-header h2 { font-size: 24px; }
+            .tv-hint-bar { display: none; }
+            .tv-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+            .tv-card { padding: 18px 12px; }
+            .tv-card-logo { width: 48px; height: 48px; font-size: 18px; margin-bottom: 10px; }
+            .tv-card-name { font-size: 13px; }
+            .tv-card-group { font-size: 10px; }
+
+            .tv-player-top { top: 70px; left: 15px; padding: 10px 18px; font-size: 14px; }
+
+            .tv-channel-bar { padding: 16px 0 24px; }
+            .tv-channel-bar-title { font-size: 11px; margin-bottom: 12px; }
+            .tv-ch-item { width: 130px; padding: 12px 8px; }
+            .tv-ch-num { font-size: 10px; margin-bottom: 4px; }
+            .tv-ch-logo { width: 42px; height: 42px; font-size: 16px; margin-bottom: 8px; }
+            .tv-ch-name { font-size: 11px; }
+            .tv-channel-list { padding: 0 16px 8px; gap: 10px; }
+        }
+
+        @media (min-width: 1600px) {
+            :root { --card-width: 380px; --card-gap: 24px; }
+            header { padding: 24px 80px; gap: 50px; }
+            .logo { font-size: 34px; }
+            nav { font-size: 20px; gap: 36px; }
+            .search-wrap { width: 460px; }
+            .search-wrap input { padding: 16px 24px 16px 52px; font-size: 18px; border-radius: 14px; }
+            .hero { height: 800px; padding: 0 80px 120px; }
+            .hero h1 { font-size: 76px; }
+            .hero p { font-size: 22px; max-width: 800px; }
+            .hero-badge { font-size: 16px; padding: 8px 20px; }
+            .btn-play, .btn-more { padding: 22px 52px; font-size: 22px; border-radius: 16px; }
+            .section-header { padding: 0 80px; }
+            .section-header h2 { font-size: 40px; }
+            .section-header .count { font-size: 22px; }
+            .genre-filters { padding: 0 80px 30px; }
+            .genre-btn { padding: 14px 28px; font-size: 18px; }
+            .card-info { padding: 24px 26px 26px; }
+            .card-info h3 { font-size: 20px; }
+            .card-info .meta { font-size: 16px; }
+            .play-icon { width: 88px; height: 88px; font-size: 36px; }
+            .card.tv-focus { transform: translateY(-12px) scale(1.08); }
+            .scroll-row { padding: 20px 80px 40px; }
+            .scroll-row::-webkit-scrollbar { display: none; }
+            .scroll-row { scrollbar-width: none; }
+            .player-controls { bottom: 180px; gap: 30px; }
+            .ctrl-btn { padding: 22px 44px; font-size: 24px; min-width: 140px; border-radius: 18px; }
+            .tv-section { padding: 160px 80px 80px; }
+            .tv-grid { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 28px; }
+            .tv-card { padding: 36px 24px; }
+            .tv-card-logo { width: 90px; height: 90px; font-size: 36px; }
+            .tv-card-name { font-size: 22px; }
+            .tv-ch-item { width: 220px; padding: 20px 14px; }
+            .tv-ch-logo { width: 76px; height: 76px; font-size: 28px; }
+            .tv-ch-name { font-size: 16px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ===== УНИВЕРСАЛЬНАЯ КНОПКА НАЗАД (поверх всего) ===== -->
+    <button class="universal-back-btn" id="universalBackBtn" onclick="universalBack()" title="Назад">
+        <span class="back-icon">←</span>
+        <span>Назад</span>
+    </button>
+
+    <!-- ===== ШАПКА ===== -->
+    <header id="mainHeader">
+        <button class="burger" id="burgerBtn" onclick="toggleMobileMenu()" aria-label="Меню">
+            <span></span><span></span><span></span>
+        </button>
+        <div class="logo" onclick="goHome()">Suf<span>Tube</span></div>
+        <nav>
+            <a class="active" id="navHome" onclick="goHome()">Главная</a>
+            <a id="navTV" onclick="openTVSection()">📺 ТВ Каналы</a>
+            <a id="navFun" onclick="openFunSection()">🎬 Развлекательные</a>
+        </nav>
+        <div class="search-wrap">
+            <input type="text" id="searchInput" placeholder="Поиск фильмов..." oninput="filterCards()" tabindex="0">
+        </div>
+    </header>
+
+    <!-- ===== МОБИЛЬНОЕ МЕНЮ ===== -->
+    <div class="menu-overlay" id="menuOverlay" onclick="closeMobileMenu()"></div>
+    <div class="mobile-menu" id="mobileMenu">
+        <input type="text" class="menu-search" id="mobileSearch" placeholder="🔍 Поиск фильмов..." oninput="mobileSearch()">
+        <a id="mNavHome" onclick="goHome(); closeMobileMenu();">🏠 Главная</a>
+        <a id="mNavTV" onclick="openTVSection(); closeMobileMenu();">📺 ТВ Каналы</a>
+        <a id="mNavFun" onclick="openFunSection(); closeMobileMenu();">🎬 Развлекательные</a>
+        <div class="divider"></div>
+        <a onclick="scrollToSection('films'); closeMobileMenu();">🎥 Фильмы</a>
+        <a onclick="scrollToSection('docs'); closeMobileMenu();">📼 Документальные</a>
+    </div>
+
+    <!-- ===== БАННЕР ===== -->
+    <div class="hero" id="hero">
+        <div class="hero-content">
+            <div class="hero-badge">🌙 Вечерний просмотр</div>
+            <h1>Кино для тёплого вечера</h1>
+            <p>Военные драмы, классика, ужасы, комедии и фантастика. Устраивайся поудобнее — сейчас будет атмосферно.</p>
+            <div class="hero-buttons">
+                <button class="btn-play" onclick="playFirst()">▶ Смотреть</button>
+                <button class="btn-more" onclick="scrollToSection('films')">Подробнее</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== КОНТЕНТ ===== -->
+    <main id="mainContent">
+        <div class="section" id="films">
+            <div class="section-header"><h2>Военные фильмы <span class="count" id="filmsCount"></span></h2></div>
+            <div class="scroll-row" id="filmsRow"></div>
+        </div>
+        <div class="section" id="docs">
+            <div class="section-header"><h2>Документальные <span class="count" id="docsCount"></span></h2></div>
+            <div class="scroll-row" id="docsRow"></div>
+        </div>
+    </main>
+
+    <!-- ===== РАЗВЛЕКАТЕЛЬНЫЕ ===== -->
+    <div id="funSection" class="tv-section">
+        <div class="tv-header">
+            <h2>🎬 Развлекательные</h2>
+        </div>
+        <div class="genre-filters" id="genreFilters">
+            <button class="genre-btn active" data-genre="all" onclick="filterByGenre('all')">Все</button>
+            <button class="genre-btn" data-genre="horror" onclick="filterByGenre('horror')">😱 Ужасы</button>
+            <button class="genre-btn" data-genre="comedy" onclick="filterByGenre('comedy')">😂 Комедии</button>
+            <button class="genre-btn" data-genre="drama" onclick="filterByGenre('drama')">🎭 Драмы</button>
+            <button class="genre-btn" data-genre="scifi" onclick="filterByGenre('scifi')">🚀 Фантастика</button>
+            <button class="genre-btn" data-genre="russian" onclick="filterByGenre('russian')">🇷🇺 Русские</button>
+            <button class="genre-btn" data-genre="animation" onclick="filterByGenre('animation')">🧸 Мультфильмы</button>
+        </div>
+        <div class="scroll-row" id="funRow"></div>
+    </div>
+
+    <!-- ===== ТВ-СЕКЦИЯ ===== -->
+    <div id="tvSection" class="tv-section">
+        <div class="tv-header">
+            <h2>📺 Телеканалы</h2>
+            <div class="tv-hint-bar">
+                <span>← → ↑ ↓ — выбор</span>
+                <span>Enter / OK — смотреть</span>
+                <span>CH+ / CH- — переключение</span>
+                <span>EXIT / HOME — выход</span>
+            </div>
+        </div>
+        <div id="tvGrid" class="tv-grid"></div>
+    </div>
+
+    <!-- ===== НИЧЕГО НЕ НАЙДЕНО ===== -->
+    <div class="no-results" id="noResults">
+        <div class="emoji">🎬</div>
+        <h2>Ничего не найдено</h2>
+        <p>Попробуйте другое слово или поищите напрямую на Rutube</p>
+        <a href="#" id="rutubeBtn" class="btn-rutube" target="_blank">🔍 Искать на Rutube</a>
+    </div>
+
+    <!-- ===== ПЛЕЕР ФИЛЬМОВ ===== -->
+    <div class="player-overlay" id="playerOverlay">
+        <div id="playerStage"><div id="rutubePlayerContainer"></div></div>
+    </div>
+
+    <div class="player-controls" id="playerControls">
+        <button class="ctrl-btn" onclick="rewind(-10)">⏪ 10</button>
+        <button class="ctrl-btn" onclick="togglePause()" id="pauseBtn">⏸</button>
+        <button class="ctrl-btn" onclick="rewind(10)">10 ⏩</button>
+        <button class="ctrl-btn" onclick="toggleMute()" id="muteBtn">🔊</button>
+    </div>
+
+    <!-- ===== ТВ-ПЛЕЕР ===== -->
+    <div id="tvPlayerOverlay" class="tv-player-overlay">
+        <div id="tvPlayerStage"></div>
+        <div class="tv-player-top"><span id="tvChannelName">Телеканал</span></div>
+    </div>
+
+    <!-- ===== НИЖНЯЯ ЛЕНТА КАНАЛОВ ===== -->
+    <div class="tv-channel-bar" id="tvChannelBar">
+        <div class="tv-channel-bar-title">📺 ← → переключить · ↑ закрыть · OK — все каналы</div>
+        <div class="tv-channel-list" id="tvChannelList"></div>
+    </div>
+
+    <div class="tv-bar-hint" id="tvBarHint">⬇ Вниз — список каналов</div>
+
+    <div class="loader" id="loader"><div class="loader-spinner"></div><div class="loader-text">Загружаем вечер...</div></div>
+
+    <div class="rotate-hint" id="rotateHint">
+        <div class="icon">📱</div>
+        <h2>Поверните телефон</h2>
+        <p>Для удобного просмотра рекомендуется горизонтальный режим</p>
+    </div>
+
+    <script src="https://unpkg.com/rutube-player@1.0.5"></script>
+
+    <script>
+        // =============================================
+        // БАЗА ВОЕННЫХ ФИЛЬМОВ
+        // =============================================
+        const movies = [
+            { id: '539a180001d4e45169907440dc090395', title: 'СВОИ. Баллада о войне', year: '2025', desc: 'Реж. Артем Артемов', tags: 'свои баллада война 2025', category: 'films', age: '16+' },
+            { id: 'ec42e7012e936fd9344416eb030822a8', title: 'СВОИ. Баллада о войне — 2', year: '2025', desc: 'Артем Артемов · 89 мин', tags: 'свои баллада война 2025', category: 'films', age: '16+' },
+            { id: 'b590a94d80ac60d6a2900b65775c9963', title: 'Таганрог — Серия 1', year: '2024', desc: 'Военно-историческая драма', tags: 'таганрог серия военный drama', category: 'films', age: '16+' },
+            { id: '3cdd55ec8296cf3093fd8252fa685390', title: 'Брестская крепость', year: '2010', desc: 'Александр Котт', tags: 'брестская крепость 2010 оборона', category: 'films', age: '16+' },
+            { id: '8d48e91847c13088a9af5aa6fe807d96', title: 'Офицеры', year: '1971', desc: 'Киностудия Горького', tags: 'офицеры 1971 советский', category: 'films', age: '12+' },
+            { id: '09fa53133ba07d30195e6b243e101597', title: 'Восхождение', year: '1976', desc: 'Лариса Шепитько', tags: 'восхождение 1976 шепитько', category: 'films', age: '16+' },
+            { id: '7be99c8f5c930b532a101d372c43e185', title: 'Они сражались за Родину', year: '1975', desc: 'Сергей Бондарчук', tags: 'они сражались родина 1975 бондарчук', category: 'films', age: '12+' },
+            { id: 'd6f214540607cdc5919d980703acec72', title: 'Битва за Москву: Агрессия 1', year: '1985', desc: 'Юрий Озеров', tags: 'битва москву озеров 1985', category: 'films', age: '12+' },
+            { id: 'ba782d6ccd0199d3f1d457f87e479ec8', title: 'Битва за Москву: Тайфун 1', year: '1985', desc: 'Юрий Озеров', tags: 'битва москву тайфун 1985', category: 'films', age: '12+' },
+            { id: '98fb1adb7c14d0601bd0abae25fadf3a', title: 'Великая война: Партизаны', year: '2010', desc: 'Star Media', tags: 'великая война партизаны документальный', category: 'docs', age: '12+' },
+            { id: '3cfa4872ebcc23d9e1217176b80f9dda', title: 'Великая война: Берлин', year: '2010', desc: 'Star Media', tags: 'великая война берлин документальный', category: 'docs', age: '12+' }
+        ];
+
+        // =============================================
+        // ТВ-КАНАЛЫ
+        // =============================================
+        const tvChannels = [
+            { id: 'c58f502c7bb34a8fcdd976b221fca292', name: 'Первый канал', group: 'Федеральные', short: '1' },
+            { id: '2742a3c42be661ea732705f80adb7bdd', name: 'Россия 1', group: 'Федеральные', short: 'Р1' },
+            { id: '11bbbec75a2ceb8cf446ad16813c6eec', name: 'Матч ТВ', group: 'Спорт', short: 'М' },
+            { id: 'c37cd74192c6bc3d6cd6077c0c4fd686', name: 'НТВ', group: 'Федеральные', short: 'Н' },
+            { id: 'ac99df0130b4620480528efc6aa22ad6', name: 'Пятый канал', group: 'Федеральные', short: '5' },
+            { id: '7015ad3690d4ef70d75a6e26d0e58565', name: 'ТВЦ', group: 'Федеральные', short: 'ТВ' },
+            { id: '67938d3536450ae8d10f12acee7ffde6', name: 'РЕН ТВ', group: 'Федеральные', short: 'РЕН' },
+            { id: '2bbfa9ebf9d79ade480d7281fcef1008', name: 'СПАС', group: 'Федеральные', short: 'СП' },
+            { id: '895f3379ab9fee679eb088215263b8d7', name: 'СТС', group: 'Развлекательные', short: 'СТС' },
+            { id: '4befbf3628d34d93517dfec377743837', name: 'Домашний', group: 'Развлекательные', short: 'Д' },
+            { id: '7bf12d9c050f9a7ef3728db5730432ae', name: 'ТВ-3', group: 'Развлекательные', short: 'ТВ3' },
+            { id: '9f87a9a0cecbe773be6fddcbd93585ac', name: 'Пятница', group: 'Развлекательные', short: 'ПТ' },
+            { id: '5ab908fccfac5bb43ef2b1e4182256b0', name: 'Звезда', group: 'Федеральные', short: 'ЗВ' },
+            { id: 'afef67d151b5a607dee1ef0aa299a52c', name: 'МИР', group: 'Федеральные', short: 'МИР' },
+            { id: '546602986e6a424d74d594876ddb3f04', name: 'ТНТ', group: 'Развлекательные', short: 'ТНТ' },
+            { id: 'df6fe73494a26f74da51573fd97b9baa', name: 'МУЗ-ТВ', group: 'Музыка', short: 'МУЗ' },
+            { id: 'd0c0d69362edfbe706cb82d973439bb5', name: 'Россия К', group: 'Федеральные', short: 'РК' },
+            { id: 'ad6ba2e9e587406b29978b861b7b7dd1', name: 'Россия 24', group: 'Новости', short: 'Р24' },
+            { id: 'faa934385b83f9e8a92f5484defae5fa', name: 'ОТР', group: 'Федеральные', short: 'ОТР' },
+            { id: '76de13007ff82a001f786f148e9fd39a', name: 'Мультфильмы', group: 'Детские', short: 'МЛ' },
+            { id: '5bbff90167d1b1d88fda92376ec7a651', name: 'ЧЕ!', group: 'Развлекательные', short: 'ЧЕ' },
+            { id: '2dba20a8405e57935827cb5721c2b759', name: 'Солнце', group: 'Развлекательные', short: 'СЛ' },
+            { id: '5c9327074e25ca86f3111d4085cbbb65', name: 'Ю-ТВ', group: 'Развлекательные', short: 'Ю' },
+            { id: '9ae8e8a6dc58bdad66190475f9872ecd', name: 'Rutube TV', group: 'Онлайн', short: 'RT' },
+            { id: '32dc45cf878497abe1c9695e228f039b', name: 'СТС Love', group: 'Развлекательные', short: 'СТСЛ' },
+            { id: '310744c10a5809da38aa445c952976da', name: 'Суббота', group: 'Развлекательные', short: 'СБ' },
+            { id: '13053e6f977f78e8caf3ac0239f972e8', name: 'Звезда HD', group: 'Федеральные', short: 'ЗВHD' }
+        ];
+
+        // =============================================
+        // РАЗВЛЕКАТЕЛЬНЫЕ
+        // =============================================
+        const funMovies = [
+            { id: 'f78108bdb07359483a12ee46d7b750ab', title: 'Молчание ягнят', year: '1990', genre: 'horror', desc: 'Джоди Фостер, Энтони Хопкинс' },
+            { id: 'e210f5c91d20eeb7c3b240fb34106dce', title: 'Семь', year: '1995', genre: 'horror', desc: 'Дэвид Финчер' },
+            { id: '07cdd260a50723a49c32a531c65aaa1f', title: 'Американский психопат', year: '2000', genre: 'horror', desc: 'Кристиан Бэйл' },
+            { id: '355f29b6069dce6d7b9fc06b84efe926', title: 'Зодиак', year: '2007', genre: 'horror', desc: 'Дэвид Финчер' },
+            { id: '45f3753fb4854d00c04f2d9dfd291bc7', title: 'Девушка с татуировкой дракона', year: '2011', genre: 'horror', desc: 'Дэниел Крейг' },
+            { id: '4a2767046ff61960819c95798f223009', title: 'Искатели могил', year: '2011', genre: 'horror', desc: 'Мистика' },
+            { id: '6751daaab76ee813c48680a6760b7433', title: 'Обряд', year: '2011', genre: 'horror', desc: 'Энтони Хопкинс' },
+            { id: '854ce20ade387f87041ca1e29e002448', title: 'Интерстеллар', year: '2014', genre: 'scifi', desc: 'Кристофер Нолан' },
+            { id: 'c8bea44b77771f8f65fe9c77f2775c22', title: '2001 год: Космическая одиссея', year: '1968', genre: 'scifi', desc: 'Стэнли Кубрик' },
+            { id: '204b52f643ead5d3c6fd96daef5bf26c', title: 'Чужой', year: '1979', genre: 'scifi', desc: 'Ридли Скотт' },
+            { id: '74c7344092d5ba704629b63198c773b4', title: 'Война миров', year: '2005', genre: 'scifi', desc: 'Стивен Спилберг' },
+            { id: '941e75b8fa7a972054a6b736ba448804', title: 'Война миров Z', year: '2013', genre: 'scifi', desc: 'Брэд Питт' },
+            { id: '237074ca7690d1b7ffb34b7d2a8284b3', title: 'Ио', year: '2019', genre: 'scifi', desc: 'Энтони Маки' },
+            { id: 'cdfd04ba92fa094d31e6959d9f78854d', title: 'Земля кочевников', year: '2020', genre: 'drama', desc: 'Оскар 2021' },
+            { id: '93f3c74ad659226a3888f431edaec91a', title: 'Зимняя кость', year: '2010', genre: 'drama', desc: 'Дженнифер Лоуренс' },
+            { id: '66d3f904c84f73f3bfb15db38bfff989', title: 'Общество снега', year: '2023', genre: 'drama', desc: 'Выживание в Андах' },
+            { id: '52da682da2cf090b195129eeab21656c', title: 'Ирландец', year: '2019', genre: 'drama', desc: 'Мартин Скорсезе' },
+            { id: '5b3fd54894b7d276662b27eedda2cde5', title: 'Война токов', year: '2017', genre: 'drama', desc: 'Тесла и Эдисон' },
+            { id: 'fa0920feea1ee6b5f30fc789f1655bf4', title: 'Инспектор Гаджет', year: '1999', genre: 'comedy', desc: 'Мэттью Бродерик' },
+            { id: 'd7c943a04ee9c6a342e12002ecbf569e', title: 'Зачарованная', year: '2007', genre: 'comedy', desc: 'Эми Адамс' },
+            { id: '5fabec636358f95fd58882ec4d171433', title: 'Вокруг света за 80 дней', year: '2004', genre: 'comedy', desc: 'Джеки Чан' },
+            { id: 'eb3709ef32b7a3e92766e77d42f5dac7', title: 'Война невест', year: '2009', genre: 'comedy', desc: 'Энн Хэтэуэй' },
+            { id: '145188522089b1b2427094588b67c03c', title: 'Ограбление по-итальянски', year: '2003', genre: 'comedy', desc: 'Марк Уолберг' },
+            { id: 'db084c2ef211d6804688c8bb189fe6a4a', title: 'Огни большого города', year: '1931', genre: 'comedy', desc: 'Чарли Чаплин' },
+            { id: 'cbf79bb5e0eae3b7a27969443d929dfc', title: 'Король Лев', year: '1994', genre: 'animation', desc: 'Disney' },
+            { id: '0073e0c62fd08d5903cc94ee63abd270', title: 'Красавица и чудовище', year: '1991', genre: 'animation', desc: 'Disney' },
+            { id: '6049ee64f8347e176476f19b3ed28471', title: 'Тарзан', year: '1999', genre: 'animation', desc: 'Disney' },
+            { id: '579b220f359c6744d73d6e11a564e80e', title: 'Мулан', year: '1998', genre: 'animation', desc: 'Disney' },
+            { id: '406a22fdb5ad159f397e284423695672', title: 'Геркулес', year: '1997', genre: 'animation', desc: 'Disney' },
+            { id: 'adb51e475e2ddb482bf40d67bd430917', title: 'Планета сокровищ', year: '2002', genre: 'animation', desc: 'Disney' },
+            { id: '8506739df1d041dfa9befcaf6d105abf', title: 'Сердце пармы', year: '2021', genre: 'russian', desc: 'История, драма' },
+            { id: '120225e9d33d3dc3b51a8f0581be5879', title: 'Возраст любви', year: '1953', genre: 'russian', desc: 'Классика' }
+        ];
+
+        // =============================================
+        // СОСТОЯНИЕ
+        // =============================================
+        let tvMode = false;
+        let focusIndex = -1;
+        let focusableItems = [];
+        let playerOpen = false;
+        let currentMovieIndex = -1;
+        let hintTimeout = null;
+        let rutubePlayer = null;
+        let isMuted = false;
+        let savedVolume = 1;
+        let lastSavedTime = 0;
+        let saveInterval = null;
+
+        let tvSectionActive = false;
+        let tvPlayerOverlayOpen = false;
+        let tvFocus = 0;
+        let tvPlayer = null;
+        let tvControlTimeout = null;
+        let currentTVIndex = -1;
+
+        let funSectionActive = false;
+        let currentGenreFilter = 'all';
+
+        let sourceTab = 'home';
+
+        // =============================================
+        // УНИВЕРСАЛЬНАЯ КНОПКА НАЗАД
+        // =============================================
+        function showUniversalBack() {
+            document.getElementById('universalBackBtn').classList.add('show');
+        }
+        function hideUniversalBack() {
+            document.getElementById('universalBackBtn').classList.remove('show');
+        }
+
+        function universalBack() {
+            if (playerOpen) {
+                closePlayer();
+                if (sourceTab === 'fun') openFunSection();
+                else if (sourceTab === 'tv') openTVSection();
+                else goHome();
+                return;
+            }
+            if (tvPlayerOverlayOpen) {
+                if (tvBarOpen) { closeTVBar(); return; }
+                tvExit();
+                return;
+            }
+        }
+
+        // =============================================
+        // МОБИЛЬНОЕ МЕНЮ
+        // =============================================
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobileMenu');
+            const overlay = document.getElementById('menuOverlay');
+            const burger = document.getElementById('burgerBtn');
+            const isOpen = menu.classList.contains('open');
+            if (isOpen) closeMobileMenu();
+            else {
+                menu.classList.add('open');
+                overlay.classList.add('show');
+                burger.classList.add('open');
+                document.body.style.overflow = 'hidden';
+            }
+        }
+
+        function closeMobileMenu() {
+            document.getElementById('mobileMenu').classList.remove('open');
+            document.getElementById('menuOverlay').classList.remove('show');
+            document.getElementById('burgerBtn').classList.remove('open');
+            document.body.style.overflow = '';
+        }
+
+        function mobileSearch() {
+            const q = document.getElementById('mobileSearch').value;
+            document.getElementById('searchInput').value = q;
+            filterCards();
+        }
+
+        // =============================================
+        // СОХРАНЕНИЕ ПРОГРЕССА
+        // =============================================
+        function saveCurrentProgress(force = false) {
+            if (!rutubePlayer || !playerOpen || currentMovieIndex < 0) return;
+            try {
+                const t = rutubePlayer.currentDuration();
+                if (typeof t === 'number' && t > 0) {
+                    const m = movies[currentMovieIndex];
+                    if (force || Math.abs(t - lastSavedTime) > 0.5) {
+                        localStorage.setItem('suf_time_' + m.id, t);
+                        lastSavedTime = t;
+                    }
+                }
+            } catch(e) {}
+        }
+
+        function getSavedTime(videoId) {
+            const v = localStorage.getItem('suf_time_' + videoId);
+            return v ? parseFloat(v) : 0;
+        }
+
+        // =============================================
+        // ПЛЕЕР
+        // =============================================
+        function initPlayer(videoId) {
+            const container = document.getElementById('rutubePlayerContainer');
+            container.innerHTML = '<div id="player"></div>';
+            if (rutubePlayer) { try { rutubePlayer.destroy(); } catch(e) {} rutubePlayer = null; }
+
+            const stage = document.getElementById('playerStage');
+            rutubePlayer = new Rutube();
+            rutubePlayer.Player('player', {
+                width: stage.clientWidth || window.innerWidth,
+                height: stage.clientHeight || window.innerHeight,
+                videoId: videoId,
+                events: { onReady: 'onPlayerReady', onStateChange: 'onPlayerStateChange' }
+            });
+
+            const savedTime = getSavedTime(videoId);
+            lastSavedTime = savedTime;
+            if (savedTime > 5) {
+                setTimeout(() => { try { rutubePlayer.seekTo({ time: savedTime }); } catch(e) {} }, 1500);
+            }
+            const savedVol = localStorage.getItem('suf_volume');
+            if (savedVol) {
+                savedVolume = parseFloat(savedVol);
+                setTimeout(() => { try { rutubePlayer.setVolume(savedVolume); } catch(e) {} }, 1500);
+            }
+        }
+
+        window.onPlayerReady = function() {
+            document.getElementById('loader').classList.remove('show');
+            updateRotateHint();
+        };
+
+        window.onPlayerStateChange = function(event) {
+            const state = event.playerState;
+            if (state && state.PLAYING !== undefined) {
+                document.getElementById('pauseBtn').textContent = '⏸';
+                if (!saveInterval) saveInterval = setInterval(() => saveCurrentProgress(), 5000);
+            }
+            if (state && state.PAUSED !== undefined) {
+                document.getElementById('pauseBtn').textContent = '▶';
+                saveCurrentProgress(true);
+            }
+            if (state && state.ENDED !== undefined) {
+                clearInterval(saveInterval); saveInterval = null;
+                if (currentMovieIndex >= 0) localStorage.removeItem('suf_time_' + movies[currentMovieIndex].id);
+            }
+        };
+
+        // =============================================
+        // РЕНДЕР
+        // =============================================
+        function renderCards() {
+            const filmsRow = document.getElementById('filmsRow');
+            const docsRow = document.getElementById('docsRow');
+            filmsRow.innerHTML = ''; docsRow.innerHTML = '';
+            let filmsCount = 0, docsCount = 0;
+
+            movies.forEach((m, i) => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.dataset.index = i;
+                card.dataset.tags = m.tags.toLowerCase();
+                card.dataset.category = m.category;
+                card.tabIndex = 0;
+
+                const posterUrl = `https://rutube.ru/api/video/${m.id}/thumbnail/?redirect=1`;
+                card.innerHTML = `
+                    <div class="card-poster">
+                        <img src="${posterUrl}" alt="${m.title}" loading="lazy" onerror="this.style.display='none'; this.parentElement.style.background='#1a1a2e';">
+                        <div class="card-overlay"><div class="play-icon">▶</div></div>
+                    </div>
+                    <div class="card-info">
+                        <h3>${m.title}<span class="age-badge">${m.age || '12+'}</span></h3>
+                        <div class="meta">${m.year} · ${m.desc}</div>
+                    </div>
+                `;
+                card.onclick = () => openPlayer(i);
+                if (m.category === 'films') { filmsRow.appendChild(card); filmsCount++; }
+                else { docsRow.appendChild(card); docsCount++; }
+            });
+
+            document.getElementById('filmsCount').textContent = `(${filmsCount})`;
+            document.getElementById('docsCount').textContent = `(${docsCount})`;
+            updateFocusable();
+        }
+
+        function renderFunCards() {
+            const row = document.getElementById('funRow');
+            row.innerHTML = '';
+            funMovies.forEach((m, i) => {
+                if (currentGenreFilter !== 'all' && m.genre !== currentGenreFilter) return;
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.dataset.index = 'fun_' + i;
+                card.dataset.genre = m.genre;
+                card.tabIndex = 0;
+                const posterUrl = `https://rutube.ru/api/video/${m.id}/thumbnail/?redirect=1`;
+                card.innerHTML = `
+                    <div class="card-poster">
+                        <img src="${posterUrl}" alt="${m.title}" loading="lazy" onerror="this.style.display='none'; this.parentElement.style.background='#1a1a2e';">
+                        <div class="card-overlay"><div class="play-icon">▶</div></div>
+                    </div>
+                    <div class="card-info">
+                        <h3>${m.title}<span class="age-badge">${m.year}</span></h3>
+                        <div class="meta">${m.desc}</div>
+                    </div>
+                `;
+                card.onclick = () => openFunPlayer(i);
+                row.appendChild(card);
+            });
+        }
+
+        function openFunPlayer(index) {
+            const m = funMovies[index];
+            if (!m) return;
+            sourceTab = 'fun';
+            const existing = movies.findIndex(x => x.id === m.id);
+            if (existing >= 0) {
+                openPlayer(existing);
+            } else {
+                movies.push({ ...m, category: 'films', tags: m.title.toLowerCase() + ' ' + m.desc.toLowerCase() });
+                openPlayer(movies.length - 1);
+            }
+        }
+
+        function filterByGenre(genre) {
+            currentGenreFilter = genre;
+            document.querySelectorAll('.genre-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.genre === genre);
+            });
+            renderFunCards();
+        }
+
+        // =============================================
+        // FULLSCREEN
+        // =============================================
+        async function enterFullscreenLandscape(stage) {
+            const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+            try {
+                if (stage.requestFullscreen) await stage.requestFullscreen({ navigationUI: 'hide' }).catch(() => {});
+                else if (stage.webkitRequestFullscreen) stage.webkitRequestFullscreen();
+                if (screen.orientation && screen.orientation.lock) {
+                    try { await screen.orientation.lock('landscape'); } catch(err) {}
+                }
+                if (isMobile && !screen.orientation?.lock) updateRotateHint();
+            } catch(e) {}
+        }
+
+        async function exitFullscreenAll() {
+            try {
+                if (screen.orientation && screen.orientation.unlock) { try { screen.orientation.unlock(); } catch(e) {} }
+                if (document.fullscreenElement) await document.exitFullscreen().catch(() => {});
+                else if (document.webkitFullscreenElement) document.webkitExitFullscreen();
+            } catch(e) {}
+            document.getElementById('rotateHint').classList.remove('show');
+        }
+
+        function updateRotateHint() {
+            const isPortrait = window.innerHeight > window.innerWidth;
+            const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+            const hint = document.getElementById('rotateHint');
+            if ((playerOpen || tvPlayerOverlayOpen) && isMobile && isPortrait) hint.classList.add('show');
+            else hint.classList.remove('show');
+        }
+
+        // =============================================
+        // ОТКРЫТИЕ ФИЛЬМА
+        // =============================================
+        async function openPlayer(index) {
+            const m = movies[index];
+            if (!m) return;
+            currentMovieIndex = index;
+            playerOpen = true;
+            lastSavedTime = 0;
+
+            if (funSectionActive) sourceTab = 'fun';
+            else if (tvSectionActive) sourceTab = 'tv';
+            else sourceTab = 'home';
+
+            document.getElementById('playerOverlay').classList.add('open');
+            document.getElementById('loader').classList.add('show');
+            document.body.style.overflow = 'hidden';
+
+            initPlayer(m.id);
+
+            setTimeout(() => {
+                document.getElementById('playerControls').classList.add('show');
+                showUniversalBack();
+            }, 800);
+
+            document.getElementById('pauseBtn').textContent = '⏸';
+
+            clearTimeout(hintTimeout);
+            hintTimeout = setTimeout(() => {
+                document.getElementById('playerControls').classList.remove('show');
+            }, 5000);
+
+            await enterFullscreenLandscape(document.getElementById('playerStage'));
+        }
+
+        function closePlayer() {
+            saveCurrentProgress(true);
+            clearInterval(saveInterval); saveInterval = null;
+            exitFullscreenAll();
+            try { if (rutubePlayer) rutubePlayer.destroy(); } catch(e) {}
+            rutubePlayer = null;
+            document.getElementById('rutubePlayerContainer').innerHTML = '';
+            document.getElementById('playerOverlay').classList.remove('open');
+            document.getElementById('playerControls').classList.remove('show');
+            document.getElementById('loader').classList.remove('show');
+            hideUniversalBack();
+            document.body.style.overflow = '';
+            playerOpen = false;
+            currentMovieIndex = -1;
+        }
+
+        function rewind(seconds) {
+            if (!playerOpen || !rutubePlayer) return;
+            try { rutubePlayer.seekTo({ time: Math.max(0, rutubePlayer.currentDuration() + seconds) }); } catch(e) {}
+            showControls();
+        }
+
+        function togglePause() {
+            if (!playerOpen || !rutubePlayer) return;
+            try {
+                if (document.getElementById('pauseBtn').textContent === '⏸') rutubePlayer.pause();
+                else rutubePlayer.play();
+            } catch(e) {}
+            showControls();
+        }
+
+        function toggleMute() {
+            if (!playerOpen || !rutubePlayer) return;
+            try {
+                if (isMuted) { rutubePlayer.unMute(); rutubePlayer.setVolume(savedVolume); document.getElementById('muteBtn').textContent = '🔊'; isMuted = false; }
+                else { rutubePlayer.mute(); document.getElementById('muteBtn').textContent = '🔇'; isMuted = true; }
+            } catch(e) {}
+            showControls();
+        }
+
+        function showControls() {
+            document.getElementById('playerControls').classList.add('show');
+            showUniversalBack();
+            clearTimeout(hintTimeout);
+            hintTimeout = setTimeout(() => {
+                document.getElementById('playerControls').classList.remove('show');
+            }, 4000);
+        }
+
+        // =============================================
+        // НАВИГАЦИЯ
+        // =============================================
+        function goHome() {
+            closeTVSection();
+            closeFunSection();
+            document.getElementById('navHome').classList.add('active');
+            document.getElementById('mainContent').style.display = '';
+            document.getElementById('hero').style.display = '';
+        }
+
+        function openTVSection() {
+            tvSectionActive = true;
+            tvFocus = 0;
+            funSectionActive = false;
+            document.getElementById('mainContent').style.display = 'none';
+            document.getElementById('hero').style.display = 'none';
+            document.getElementById('funSection').classList.remove('active');
+            document.getElementById('noResults').style.display = 'none';
+            document.getElementById('tvSection').classList.add('active');
+            document.getElementById('navTV').classList.add('active');
+            document.getElementById('navFun').classList.remove('active');
+            document.getElementById('navHome').classList.remove('active');
+            document.getElementById('mNavTV')?.classList.add('active');
+            document.getElementById('mNavHome')?.classList.remove('active');
+            document.getElementById('mNavFun')?.classList.remove('active');
+
+            renderTVGrid();
+            setTimeout(() => focusTVCard(0), 100);
+        }
+
+        function closeTVSection() {
+            tvSectionActive = false;
+            document.getElementById('tvSection').classList.remove('active');
+            document.getElementById('navTV').classList.remove('active');
+        }
+
+        function openFunSection() {
+            funSectionActive = true;
+            tvSectionActive = false;
+            document.getElementById('mainContent').style.display = 'none';
+            document.getElementById('hero').style.display = 'none';
+            document.getElementById('tvSection').classList.remove('active');
+            document.getElementById('noResults').style.display = 'none';
+            document.getElementById('funSection').classList.add('active');
+            document.getElementById('navFun').classList.add('active');
+            document.getElementById('navTV').classList.remove('active');
+            document.getElementById('navHome').classList.remove('active');
+            document.getElementById('mNavFun')?.classList.add('active');
+            document.getElementById('mNavHome')?.classList.remove('active');
+            document.getElementById('mNavTV')?.classList.remove('active');
+            renderFunCards();
+        }
+
+        function closeFunSection() {
+            funSectionActive = false;
+            document.getElementById('funSection').classList.remove('active');
+            document.getElementById('navFun').classList.remove('active');
+        }
+
+        // =============================================
+        // ТВ-СЕТКА
+        // =============================================
+        function renderTVGrid() {
+            const grid = document.getElementById('tvGrid');
+            grid.innerHTML = '';
+            tvChannels.forEach((ch, i) => {
+                const card = document.createElement('div');
+                card.className = 'tv-card' + (i === tvFocus ? ' tv-focus' : '');
+                card.dataset.index = i;
+                card.tabIndex = 0;
+                card.innerHTML = `
+                    <div class="tv-card-logo">${ch.short || ch.name.charAt(0)}</div>
+                    <div class="tv-card-name">${ch.name}</div>
+                    <div class="tv-card-group">${ch.group}</div>
+                `;
+                card.onclick = () => playTVChannel(i);
+                grid.appendChild(card);
+            });
+        }
+
+        function focusTVCard(index) {
+            if (index < 0 || index >= tvChannels.length) return;
+            tvFocus = index;
+            document.querySelectorAll('.tv-card').forEach((c, i) => {
+                c.classList.toggle('tv-focus', i === index);
+            });
+            const card = document.querySelector(`.tv-card[data-index="${index}"]`);
+            if (card) {
+                card.focus();
+                card.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+            }
+        }
+
+        // =============================================
+        // ТВ-ПЛЕЕР
+        // =============================================
+        async function playTVChannel(index) {
+            const ch = tvChannels[index];
+            if (!ch) return;
+            currentTVIndex = index;
+            tvFocus = index;
+            sourceTab = 'tv';
+
+            const stage = document.getElementById('tvPlayerStage');
+            stage.innerHTML = '<div id="tvPlayerEl"></div>';
+
+            if (tvPlayer) { try { tvPlayer.destroy(); } catch(e) {} tvPlayer = null; }
+
+            tvPlayer = new Rutube();
+            tvPlayer.Player('tvPlayerEl', {
+                width: stage.clientWidth || window.innerWidth,
+                height: stage.clientHeight || window.innerHeight,
+                videoId: ch.id,
+                events: { onReady: 'onTVPlayerReady' }
+            });
+
+            document.getElementById('tvChannelName').textContent = ch.name;
+            document.getElementById('tvPlayerOverlay').classList.add('open');
+            tvPlayerOverlayOpen = true;
+            document.body.style.overflow = 'hidden';
+
+            showUniversalBack();
+            document.getElementById('tvBarHint').classList.remove('hidden');
+
+            await enterFullscreenLandscape(stage);
+        }
+
+        window.onTVPlayerReady = function() {
+            document.getElementById('loader').classList.remove('show');
+            updateRotateHint();
+        };
+
+        function tvChannelNext() {
+            if (tvChannels.length === 0) return;
+            const next = (tvFocus + 1) % tvChannels.length;
+            playTVChannel(next);
+        }
+
+        function tvChannelPrev() {
+            if (tvChannels.length === 0) return;
+            const prev = (tvFocus - 1 + tvChannels.length) % tvChannels.length;
+            playTVChannel(prev);
+        }
+
+        function tvExit() {
+            closeTVBar();
+            if (tvPlayer) { try { tvPlayer.destroy(); } catch(e) {} tvPlayer = null; }
+            document.getElementById('tvPlayerStage').innerHTML = '';
+            document.getElementById('tvPlayerOverlay').classList.remove('open');
+            tvPlayerOverlayOpen = false;
+            hideUniversalBack();
+            document.body.style.overflow = '';
+
+            if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+            document.getElementById('rotateHint').classList.remove('show');
+
+            closeFunSection();
+            openTVSection();
+            setTimeout(() => focusTVCard(currentTVIndex >= 0 ? currentTVIndex : 0), 100);
+        }
+
+        // =============================================
+        // НИЖНЯЯ ЛЕНТА КАНАЛОВ
+        // =============================================
+        let tvBarOpen = false;
+        let tvBarFocus = 0;
+        let tvBarHideTimeout = null;
+
+        function renderTVChannelBar() {
+            const list = document.getElementById('tvChannelList');
+            list.innerHTML = '';
+            tvChannels.forEach((ch, i) => {
+                const item = document.createElement('div');
+                item.className = 'tv-ch-item' + (i === currentTVIndex ? ' current' : '') + (i === tvBarFocus ? ' tv-nav-focus' : '');
+                item.dataset.index = i;
+                item.innerHTML = `
+                    <div class="tv-ch-num">${i + 1}</div>
+                    <div class="tv-ch-logo">${ch.short || ch.name.charAt(0)}</div>
+                    <div class="tv-ch-name">${ch.name}</div>
+                `;
+                item.onclick = () => {
+                    playTVChannel(i);
+                    setTimeout(() => openTVBar(), 200);
+                };
+                list.appendChild(item);
+            });
+            scrollToCurrentChannel();
+        }
+
+        function scrollToCurrentChannel() {
+            const list = document.getElementById('tvChannelList');
+            const item = list.querySelector(`.tv-ch-item[data-index="${tvBarFocus}"]`);
+            if (item) item.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        }
+
+        function openTVBar() {
+            tvBarOpen = true;
+            tvBarFocus = currentTVIndex >= 0 ? currentTVIndex : 0;
+            document.getElementById('tvChannelBar').classList.add('open');
+            document.getElementById('tvBarHint').classList.add('hidden');
+            renderTVChannelBar();
+            clearTimeout(tvBarHideTimeout);
+            tvBarHideTimeout = setTimeout(() => { if (tvBarOpen) closeTVBar(); }, 10000);
+        }
+
+        function closeTVBar() {
+            tvBarOpen = false;
+            document.getElementById('tvChannelBar').classList.remove('open');
+            if (tvPlayerOverlayOpen) document.getElementById('tvBarHint').classList.remove('hidden');
+            clearTimeout(tvBarHideTimeout);
+        }
+
+        function navigateTVBar(direction) {
+            if (!tvBarOpen) return;
+            if (direction === 'left') tvBarFocus = Math.max(0, tvBarFocus - 1);
+            else if (direction === 'right') tvBarFocus = Math.min(tvChannels.length - 1, tvBarFocus + 1);
+            document.querySelectorAll('.tv-ch-item').forEach((el, i) => {
+                el.classList.toggle('tv-nav-focus', i === tvBarFocus);
+            });
+            scrollToCurrentChannel();
+            clearTimeout(tvBarHideTimeout);
+            tvBarHideTimeout = setTimeout(() => { if (tvBarOpen) closeTVBar(); }, 10000);
+        }
+
+        function selectTVBarChannel() {
+            if (!tvBarOpen) return;
+            playTVChannel(tvBarFocus);
+        }
+
+        // =============================================
+        // ПОИСК
+        // =============================================
+        function filterCards() {
+            const query = document.getElementById('searchInput').value.toLowerCase().trim();
+            const cards = document.querySelectorAll('#mainContent .card');
+            const noResults = document.getElementById('noResults');
+            const mainContent = document.getElementById('mainContent');
+            const hero = document.getElementById('hero');
+            const rutubeBtn = document.getElementById('rutubeBtn');
+            let visibleCount = 0;
+
+            if (query.length === 0) {
+                cards.forEach(c => { c.style.display = ''; c.tabIndex = 0; });
+                document.querySelectorAll('#mainContent .section').forEach(s => s.style.display = '');
+                noResults.style.display = 'none';
+                mainContent.style.display = '';
+                hero.style.display = '';
+                updateFocusable();
+                return;
+            }
+
+            const words = query.split(/\s+/).filter(w => w.length > 0);
+            cards.forEach(card => {
+                const tags = card.dataset.tags || '';
+                const match = words.some(w => tags.includes(w));
+                card.style.display = match ? '' : 'none';
+                card.tabIndex = match ? 0 : -1;
+                if (match) visibleCount++;
+            });
+
+            document.querySelectorAll('#mainContent .section').forEach(section => {
+                const row = section.querySelector('.scroll-row');
+                const hasVisible = Array.from(row.children).some(c => c.style.display !== 'none');
+                section.style.display = hasVisible ? '' : 'none';
+            });
+
+            if (visibleCount === 0) {
+                mainContent.style.display = 'none';
+                hero.style.display = 'none';
+                noResults.style.display = 'block';
+                rutubeBtn.href = 'https://rutube.ru/search/?query=' + encodeURIComponent(query);
+            } else {
+                mainContent.style.display = '';
+                hero.style.display = '';
+                noResults.style.display = 'none';
+            }
+            updateFocusable();
+        }
+
+        function resetSearch() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('mobileSearch').value = '';
+            filterCards();
+            goHome();
+        }
+
+        function scrollToSection(id) { document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' }); }
+
+        function playFirst() {
+            const firstVisible = movies.findIndex((m, i) => {
+                const card = document.querySelector(`#mainContent .card[data-index="${i}"]`);
+                return card && card.style.display !== 'none';
+            });
+            if (firstVisible >= 0) {
+                sourceTab = 'home';
+                openPlayer(firstVisible);
+            }
+        }
+
+        // =============================================
+        // ТВ-РЕЖИМ / ФОКУС
+        // =============================================
+        function detectTVMode() {
+            const isLargeScreen = window.innerWidth >= 1600;
+            const isTV = /SmartTV|Tizen|WebOS|NetCast|BRAVIA|HbbTV|POV_TV|Android TV|AppleTV/i.test(navigator.userAgent);
+            tvMode = isLargeScreen || isTV;
+        }
+
+        function updateFocusable() {
+            focusableItems = Array.from(document.querySelectorAll('#mainContent .card'))
+                .filter(c => c.style.display !== 'none' && c.tabIndex !== -1);
+            focusIndex = -1;
+        }
+
+        function setTVFocus(index) {
+            document.querySelectorAll('#mainContent .card').forEach(c => c.classList.remove('tv-focus'));
+            if (index >= 0 && index < focusableItems.length) {
+                const card = focusableItems[index];
+                card.classList.add('tv-focus');
+                card.focus();
+                card.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                focusIndex = index;
+            }
+        }
+
+        // =============================================
+        // КЛАВИАТУРА
+        // =============================================
+        document.addEventListener('keydown', e => {
+            if (playerOpen) {
+                if (['Escape','Backspace','GoBack','BrowserBack','Exit','Back','Home'].includes(e.key)) {
+                    e.preventDefault();
+                    universalBack();
+                    return;
+                }
+                if ([' ', 'Space', 'Enter'].includes(e.key)) { e.preventDefault(); togglePause(); return; }
+                if (e.key === 'ArrowRight') { e.preventDefault(); rewind(10); return; }
+                if (e.key === 'ArrowLeft') { e.preventDefault(); rewind(-10); return; }
+                showControls();
+                return;
+            }
+
+            if (tvPlayerOverlayOpen) {
+                if (['Escape','GoBack','BrowserBack','Exit','Back','Home'].includes(e.key)) {
+                    e.preventDefault();
+                    universalBack();
+                    return;
+                }
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    if (!tvBarOpen) openTVBar();
+                    else navigateTVBar('right');
+                    return;
+                }
+                if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    if (tvBarOpen) closeTVBar();
+                    return;
+                }
+                if (e.key === 'ArrowLeft') {
+                    e.preventDefault();
+                    if (tvBarOpen) navigateTVBar('left');
+                    else tvChannelPrev();
+                    return;
+                }
+                if (e.key === 'ArrowRight') {
+                    e.preventDefault();
+                    if (tvBarOpen) navigateTVBar('right');
+                    else tvChannelNext();
+                    return;
+                }
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    if (tvBarOpen) selectTVBarChannel();
+                    else tvExit();
+                    return;
+                }
+                if (e.key === 'ChannelUp' || e.key === 'PageUp') { e.preventDefault(); tvChannelNext(); return; }
+                if (e.key === 'ChannelDown' || e.key === 'PageDown') { e.preventDefault(); tvChannelPrev(); return; }
+                return;
+            }
+
+            if (tvSectionActive) {
+                const cols = Math.max(1, Math.floor(window.innerWidth / 240));
+                switch (e.key) {
+                    case 'ArrowRight': e.preventDefault(); focusTVCard(Math.min(tvFocus + 1, tvChannels.length - 1)); break;
+                    case 'ArrowLeft': e.preventDefault(); focusTVCard(Math.max(tvFocus - 1, 0)); break;
+                    case 'ArrowDown': e.preventDefault(); focusTVCard(Math.min(tvFocus + cols, tvChannels.length - 1)); break;
+                    case 'ArrowUp': e.preventDefault(); focusTVCard(Math.max(tvFocus - cols, 0)); break;
+                    case 'Enter': e.preventDefault(); if (tvChannels[tvFocus]) playTVChannel(tvFocus); break;
+                    case 'Escape':
+                    case 'Home':
+                    case 'GoBack':
+                    case 'BrowserBack':
+                        e.preventDefault(); closeTVSection(); goHome(); break;
+                }
+                return;
+            }
+
+            if (tvMode) {
+                const currentCard = focusableItems[focusIndex];
+                const currentRow = currentCard?.closest('.scroll-row');
+                switch (e.key) {
+                    case 'ArrowRight': e.preventDefault(); if (focusIndex < focusableItems.length - 1) setTVFocus(focusIndex + 1); break;
+                    case 'ArrowLeft': e.preventDefault(); if (focusIndex > 0) setTVFocus(focusIndex - 1); break;
+                    case 'ArrowDown':
+                        e.preventDefault();
+                        if (currentRow) {
+                            const rows = Array.from(document.querySelectorAll('#mainContent .scroll-row'));
+                            const rowIndex = rows.indexOf(currentRow);
+                            if (rowIndex < rows.length - 1) {
+                                const nextRow = rows[rowIndex + 1];
+                                const nextCards = Array.from(nextRow.querySelectorAll('.card')).filter(c => c.style.display !== 'none');
+                                if (nextCards.length > 0) {
+                                    const nextIndex = focusableItems.indexOf(nextCards[0]);
+                                    if (nextIndex >= 0) setTVFocus(nextIndex);
+                                }
+                            }
+                        }
+                        break;
+                    case 'ArrowUp':
+                        e.preventDefault();
+                        if (currentRow) {
+                            const rows = Array.from(document.querySelectorAll('#mainContent .scroll-row'));
+                            const rowIndex = rows.indexOf(currentRow);
+                            if (rowIndex > 0) {
+                                const prevRow = rows[rowIndex - 1];
+                                const prevCards = Array.from(prevRow.querySelectorAll('.card')).filter(c => c.style.display !== 'none');
+                                if (prevCards.length > 0) {
+                                    const prevIndex = focusableItems.indexOf(prevCards[0]);
+                                    if (prevIndex >= 0) setTVFocus(prevIndex);
+                                }
+                            }
+                        }
+                        break;
+                    case 'Enter': e.preventDefault(); if (focusIndex >= 0 && currentCard) currentCard.click(); break;
+                }
+            }
+        });
+
+        // =============================================
+        // СОБЫТИЯ
+        // =============================================
+        document.addEventListener('visibilitychange', () => { if (document.hidden) saveCurrentProgress(true); });
+        window.addEventListener('pagehide', () => saveCurrentProgress(true));
+        window.addEventListener('beforeunload', () => saveCurrentProgress(true));
+
+        document.addEventListener('fullscreenchange', () => {
+            if (!document.fullscreenElement) document.getElementById('rotateHint').classList.remove('show');
+        });
+        document.addEventListener('webkitfullscreenchange', () => {
+            if (!document.webkitFullscreenElement) document.getElementById('rotateHint').classList.remove('show');
+        });
+
+        window.addEventListener('orientationchange', () => {
+            setTimeout(() => {
+                updateRotateHint();
+                if (rutubePlayer && playerOpen) {
+                    const stage = document.getElementById('playerStage');
+                    try { rutubePlayer.setSize(stage.clientWidth || window.innerWidth, stage.clientHeight || window.innerHeight); } catch(e) {}
+                }
+                if (tvPlayer && tvPlayerOverlayOpen) {
+                    const stage = document.getElementById('tvPlayerStage');
+                    try { tvPlayer.setSize(stage.clientWidth || window.innerWidth, stage.clientHeight || window.innerHeight); } catch(e) {}
+                }
+            }, 300);
+        });
+
+        // =============================================
+        // ИНИЦИАЛИЗАЦИЯ
+        // =============================================
+        renderCards();
+        detectTVMode();
+
+        window.addEventListener('resize', () => {
+            detectTVMode();
+            updateFocusable();
+            updateRotateHint();
+            if (rutubePlayer && playerOpen) {
+                const stage = document.getElementById('playerStage');
+                try { rutubePlayer.setSize(stage.clientWidth || window.innerWidth, stage.clientHeight || window.innerHeight); } catch(e) {}
+            }
+            if (tvPlayer && tvPlayerOverlayOpen) {
+                const stage = document.getElementById('tvPlayerStage');
+                try { tvPlayer.setSize(stage.clientWidth || window.innerWidth, stage.clientHeight || window.innerHeight); } catch(e) {}
+            }
+        });
+    </script>
+
+</body>
+</html>
