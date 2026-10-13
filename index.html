@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>SufTube — Кино и ТВ</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{--focus:#ffb84d;--warm:#ff8c42;--bg:#06070d;--surface:#101119;--dim:#8a8a9a;--grad:linear-gradient(135deg,#ffc83d,#ff7a1a)}
@@ -45,17 +44,6 @@ nav a:hover,nav a.active{color:var(--focus);background:rgba(255,184,77,.12)}
 .menu-search:focus{border-color:var(--focus)}
 .menu-overlay{display:none;position:fixed;inset:0;z-index:150;background:rgba(0,0,0,.75);backdrop-filter:blur(4px)}
 .menu-overlay.show{display:block}
-
-/* VPN */
-.vpn-warning{display:none;position:fixed;inset:0;z-index:2000;background:radial-gradient(circle at center,#1a1028,#000);flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;text-align:center}
-.vpn-warning.show{display:flex}
-.vpn-warning .icon{font-size:80px;margin-bottom:24px}
-.vpn-warning h1{font-size:26px;margin-bottom:16px}
-.vpn-warning p{color:var(--dim);font-size:15px;max-width:520px;line-height:1.6;margin-bottom:14px}
-.vpn-warning code{background:rgba(255,184,77,.15);color:#ffb84d;padding:3px 8px;border-radius:6px}
-.btn-download{background:var(--grad);color:#000;font-size:17px;font-weight:700;padding:16px 34px;border:none;border-radius:14px;cursor:pointer;box-shadow:0 8px 30px rgba(255,140,66,.4);margin:20px 0 16px}
-.btn-download:disabled{opacity:.7}
-.vpn-warning .hint{color:#555;font-size:13px}
 
 /* ГЕРОЙ */
 .hero{position:relative;min-height:640px;display:flex;align-items:flex-end;padding:0 20px 36px;overflow:hidden;
@@ -249,20 +237,66 @@ main{position:relative;z-index:5;padding-bottom:60px}
  .tv-grid{grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:18px;padding:0 40px}
  .tv-card{min-height:160px}
 }
+
+/* ===== Избранное, ошибки плеера, уведомления, поиск ===== */
+.fav-btn{position:absolute;top:8px;left:8px;z-index:4;width:34px;height:34px;padding:0;border:none;border-radius:50%;background:rgba(10,10,16,.7);backdrop-filter:blur(6px);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.fun-poster .fav-btn{left:auto;right:14px;top:12px;width:40px;height:40px;font-size:19px}
+.video-error{position:absolute;inset:0;z-index:5;background:radial-gradient(circle,#1a1028,#000);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;text-align:center;padding:30px}
+.video-error h3{font-size:22px;max-width:420px}
+.ve-icon{font-size:64px}
+.ve-actions{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+#toast{position:fixed;left:50%;bottom:90px;transform:translate(-50%,20px);z-index:10000;background:rgba(10,12,24,.95);border:1.5px solid rgba(255,140,50,.6);color:#fff;padding:12px 22px;border-radius:24px;font-size:14px;opacity:0;transition:.3s;pointer-events:none;max-width:90vw;text-align:center}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+#searchSection{display:none}
+body.searching #searchSection{display:block}
+body.searching #mainContent>.section:not(#searchSection),body.searching #mainContent>.features,body.searching .hero{display:none!important}
+body.searching main{padding-top:100px}
+
+/* ===== АТМОСФЕРА КИНОТЕАТРА ===== */
+/* Заставка */
+#cinemaIntro{position:fixed;inset:0;z-index:10040;background:#000;display:none;align-items:center;justify-content:center;opacity:0;transition:opacity .8s ease;cursor:pointer}
+#cinemaIntro.show{display:flex}
+#cinemaIntro.visible{opacity:1}
+.intro-stage{position:absolute;opacity:0;transition:opacity .35s;text-align:center;padding:0 24px}
+.intro-stage.on{opacity:1}
+.intro-text{font-size:clamp(22px,5vw,44px);font-weight:300;letter-spacing:4px;color:#e8d9b5;text-transform:uppercase;text-shadow:0 0 30px rgba(255,170,60,.4)}
+.intro-logo{display:flex;align-items:center;justify-content:center;gap:14px;transform:scale(1.6)}
+.intro-skip{position:absolute;bottom:28px;color:#555;font-size:13px}
+/* Кнопки плеера: плавное появление/исчезновение */
+.player-controls{transition:opacity .3s,transform .3s}
+.player-controls.show{animation:ctrlIn .3s ease-out}
+@keyframes ctrlIn{from{opacity:0;transform:translate(-50%,20px)}to{opacity:1;transform:translate(-50%,0)}}
+.player-controls.ui-hidden{opacity:0;transform:translate(-50%,20px);pointer-events:none}
+/* Верхняя «горячая зона»: iframe не передаёт движение мыши родителю */
+.ui-hotspot{position:fixed;top:0;left:0;right:0;height:56px;z-index:2050;display:none}
+body.in-player .ui-hotspot{display:block}
+/* Режим кино */
+body.cinema-mode,body.cinema-mode *{cursor:none!important}
+body.cinema-mode .player-controls,body.cinema-mode .universal-back-btn,body.cinema-mode #toast,
+body.cinema-mode .ui-hotspot,body.cinema-mode #intermissionOverlay{display:none!important}
+#cinemaHint{position:fixed;left:50%;bottom:60px;transform:translateX(-50%);z-index:10060;background:rgba(0,0,0,.8);color:#ddd;padding:12px 24px;border-radius:24px;font-size:15px;opacity:0;pointer-events:none;transition:opacity .4s}
+#cinemaHint.show{opacity:1}
+/* Антракт */
+#intermissionOverlay{position:fixed;inset:0;z-index:2150;background:radial-gradient(circle at center,#2a1a10,#050304);display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;text-align:center;padding:30px;opacity:0;transition:opacity 1s}
+#intermissionOverlay.show{display:flex;opacity:1}
+#intermissionOverlay h2{font-size:clamp(32px,7vw,64px);font-weight:300;letter-spacing:6px;color:#e8d9b5}
+.im-timer{font-size:clamp(40px,10vw,90px);font-weight:200;color:#ffb84d;font-variant-numeric:tabular-nums}
+#intermissionOverlay p{color:#9a8f7a}
+/* Спасибо за просмотр */
+#endScreenOverlay{position:fixed;inset:0;z-index:10050;background:#000;display:none;flex-direction:column;align-items:center;justify-content:center;gap:40px;padding:24px;text-align:center;overflow-y:auto}
+#endScreenOverlay.show{display:flex;animation:fadeInEnd 1s}
+@keyframes fadeInEnd{from{opacity:0}to{opacity:1}}
+.end-main{display:flex;flex-direction:column;align-items:center;gap:36px;transition:transform .6s}
+.end-main h2{font-size:clamp(26px,6vw,48px);font-weight:300;letter-spacing:4px;color:#e8d9b5}
+.end-recs{opacity:0;transform:translateY(20px);transition:opacity .8s,transform .8s;display:none;flex-direction:column;align-items:center;gap:20px}
+.end-recs.show{display:flex;opacity:1;transform:none}
+.end-recs h3{font-size:18px;color:#aaa;font-weight:500}
+.end-recs-row{display:flex;gap:12px;justify-content:center}
 </style>
 </head>
 <body>
 
 <button class="universal-back-btn" id="universalBackBtn" onclick="universalBack()" title="Назад"><span>←</span><span>Назад</span></button>
-
-<div class="vpn-warning" id="vpnWarning">
-  <div class="icon">🛡️</div>
-  <h1>Обнаружен VPN</h1>
-  <p>Смотрите фильмы и кино — <b style="color:#ffb84d">отключите VPN</b> и запустите <code>start.bat</code>.</p>
-  <p style="font-size:14px">Файлы <b>tv.html</b> и <b>start.bat</b> скачаются в одном ZIP-архиве. Распакуйте его в любую папку и запустите <b>start.bat</b> — откроется локальный плеер без блокировок.</p>
-  <button class="btn-download" id="downloadBtn" onclick="downloadLocalPlayer(event)">📦 Скачать и запустить</button>
-  <div class="hint">Если VPN не отключить — видео не загрузится</div>
-</div>
 
 <header id="mainHeader">
   <button class="burger" id="burgerBtn" onclick="toggleMobileMenu()" aria-label="Меню"><span></span><span></span><span></span></button>
@@ -274,6 +308,7 @@ main{position:relative;z-index:5;padding-bottom:60px}
     <a class="active" id="navHome" onclick="goHome()">Главная</a>
     <a id="navTV" onclick="openTVSection()">📺 ТВ Каналы</a>
     <a id="navFun" onclick="openFunSection()">🎬 Развлекательные</a>
+    <a id="soundToggleDesk" onclick="toggleSound()" title="Звуки интерфейса">🔊</a>
   </nav>
   <div class="search-wrap"><input type="text" id="searchInput" placeholder="Поиск фильмов..." oninput="filterCards()"></div>
 </header>
@@ -286,6 +321,8 @@ main{position:relative;z-index:5;padding-bottom:60px}
   <a onclick="openFunSection(); closeMobileMenu();">🎬 Развлекательные</a>
   <div class="divider"></div>
   <a onclick="scrollToSection('films'); closeMobileMenu();">🎥 Фильмы</a>
+  <a onclick="clearHistory(); closeMobileMenu();">🗑 Очистить историю</a>
+  <a id="soundToggle" onclick="toggleSound()">🔊 Звуки интерфейса: Вкл</a>
 </div>
 
 <div class="hero" id="hero">
@@ -301,6 +338,18 @@ main{position:relative;z-index:5;padding-bottom:60px}
 </div>
 
 <main id="mainContent">
+  <div class="section" id="continueSection" style="display:none">
+    <div class="section-header"><h2>Продолжить просмотр</h2><button class="see-all" onclick="clearHistory()">Очистить <b>✕</b></button></div>
+    <div class="scroll-row" id="continueGrid"></div>
+  </div>
+  <div class="section" id="favSection" style="display:none">
+    <div class="section-header"><h2>Избранное ❤️</h2></div>
+    <div class="scroll-row" id="favGrid"></div>
+  </div>
+  <div class="section" id="searchSection">
+    <div class="section-header"><h2>Результаты поиска <span class="count" id="searchCount"></span></h2></div>
+    <div class="scroll-row wrap" id="searchGrid"></div>
+  </div>
   <div class="section" id="films">
     <div class="section-header"><h2>Военные фильмы <span class="count" id="filmsCount"></span></h2><button class="see-all" onclick="toggleAll('filmsGrid',this)">Все <b>→</b></button></div>
     <div class="scroll-row" id="filmsGrid"></div>
@@ -358,6 +407,7 @@ main{position:relative;z-index:5;padding-bottom:60px}
   <button class="ctrl-btn" onclick="rewind(-10)">⏪ 10</button>
   <button class="ctrl-btn" onclick="togglePause()" id="pauseBtn">⏸</button>
   <button class="ctrl-btn" onclick="rewind(10)">10 ⏩</button>
+  <button class="ctrl-btn" onclick="enterCinemaMode()">🎬 Режим кино</button>
 </div>
 
 <div id="tvPlayerOverlay" class="tv-player-overlay">
@@ -372,20 +422,95 @@ main{position:relative;z-index:5;padding-bottom:60px}
 <div class="loader" id="loader"><div class="loader-spinner"></div><div class="loader-text">Загружаем вечер...</div></div>
 <div class="rotate-hint" id="rotateHint"><div class="icon">📱</div><h2>Поверните телефон</h2><p>Для удобного просмотра рекомендуется горизонтальный режим</p></div>
 
+
+<!-- ===== ЗВУКИ (файлы добавьте в папку sounds/) ===== -->
+<audio id="projectorSound" src="sounds/projector.mp3" preload="auto"></audio>
+<audio id="hoverSound" src="sounds/hover.mp3" preload="auto"></audio>
+<audio id="clickSound" src="sounds/click.mp3" preload="auto"></audio>
+<audio id="zapSound" src="sounds/zap.mp3" preload="auto"></audio>
+<audio id="introMusic" src="sounds/intro.mp3" preload="auto"></audio>
+<audio id="whooshSound" src="sounds/whoosh.mp3" preload="auto"></audio>
+<audio id="endSound" src="sounds/end.mp3" preload="auto"></audio>
+<audio id="ambientSound" src="sounds/ambient.mp3" preload="auto" loop></audio>
+<audio id="intermissionSound" src="sounds/intermission.mp3" preload="auto"></audio>
+<audio id="staticSound" src="sounds/static.mp3" preload="auto"></audio>
+
+<!-- ===== ЗАСТАВКА ПЕРЕД ФИЛЬМОМ (пп. 1 и 3) ===== -->
+<div id="cinemaIntro" onclick="finishIntro()">
+  <div class="intro-stage"><p class="intro-text">Наш кинотеатр представляет</p></div>
+  <div class="intro-stage"><div class="intro-logo"><div class="logo-icon"></div><div class="logo-name"><b>Suf</b>Tube</div></div></div>
+  <div class="intro-stage"><p class="intro-text">Приятного просмотра</p></div>
+  <div class="intro-skip">Нажмите или Enter, чтобы пропустить</div>
+</div>
+
+<!-- ===== АНТРАКТ (п. 7) ===== -->
+<div id="intermissionOverlay" onclick="resumeFromIntermission()">
+  <h2>🎭 Антракт</h2>
+  <div class="im-timer" id="intermissionTimer">5:00</div>
+  <p>Сеанс продолжится, когда вы вернётесь</p>
+  <button class="btn-play" onclick="resumeFromIntermission()">▶ Продолжить</button>
+</div>
+
+<!-- ===== ЭКРАН «СПАСИБО ЗА ПРОСМОТР» (п. 5) ===== -->
+<div id="endScreenOverlay">
+  <div class="end-main"><div class="intro-logo"><div class="logo-icon"></div><div class="logo-name"><b>Suf</b>Tube</div></div><h2>Спасибо за просмотр</h2></div>
+  <div class="end-recs" id="endRecs">
+    <h3>Рекомендуем посмотреть</h3>
+    <div class="end-recs-row" id="endRecsRow"></div>
+    <button class="btn-play" onclick="endBackToCatalog()">Вернуться в каталог</button>
+  </div>
+</div>
+
+<div id="cinemaHint">Режим кино. Нажмите Escape для выхода</div>
+<div class="ui-hotspot" id="uiHotspot"></div>
+
 <script>
-// ===== ВОЕННЫЕ ФИЛЬМЫ =====
-const movies = [
- { id:'539a180001d4e45169907440dc090395', title:'СВОИ. Баллада о войне', year:'2025', desc:'Реж. Артем Артемов', tags:'свои баллада война 2025', category:'films', age:'16+' },
- { id:'ec42e7012e936fd9344416eb030822a8', title:'СВОИ. Баллада о войне — 2', year:'2025', desc:'Артем Артемов · 89 мин', tags:'свои баллада война 2025', category:'films', age:'16+' },
- { id:'b590a94d80ac60d6a2900b65775c9963', title:'Таганрог — Серия 1', year:'2024', desc:'Военно-историческая драма', tags:'таганрог серия военный drama', category:'films', age:'16+' },
- { id:'3cdd55ec8296cf3093fd8252fa685390', title:'Брестская крепость', year:'2010', desc:'Александр Котт', tags:'брестская крепость 2010 оборона', category:'films', age:'16+' },
- { id:'8d48e91847c13088a9af5aa6fe807d96', title:'Офицеры', year:'1971', desc:'Киностудия Горького', tags:'офицеры 1971 советский', category:'films', age:'12+' },
- { id:'09fa53133ba07d30195e6b243e101597', title:'Восхождение', year:'1976', desc:'Лариса Шепитько', tags:'восхождение 1976 шепитько', category:'films', age:'16+' },
- { id:'7be99c8f5c930b532a101d372c43e185', title:'Они сражались за Родину', year:'1975', desc:'Сергей Бондарчук', tags:'они сражались родина 1975 бондарчук', category:'films', age:'12+' },
- { id:'d6f214540607cdc5919d980703acec72', title:'Битва за Москву: Агрессия 1', year:'1985', desc:'Юрий Озеров', tags:'битва москву озеров 1985', category:'films', age:'12+' },
- { id:'ba782d6ccd0199d3f1d457f87e479ec8', title:'Битва за Москву: Тайфун 1', year:'1985', desc:'Юрий Озеров', tags:'битва москву тайфун 1985', category:'films', age:'12+' },
- { id:'98fb1adb7c14d0601bd0abae25fadf3a', title:'Великая война: Партизаны', year:'2010', desc:'Star Media', tags:'великая война партизаны документальный', category:'docs', age:'12+' },
- { id:'3cfa4872ebcc23d9e1217176b80f9dda', title:'Великая война: Берлин', year:'2010', desc:'Star Media', tags:'великая война берлин документальный', category:'docs', age:'12+' }
+// ===== ЕДИНЫЙ МАССИВ КОНТЕНТА =====
+// section: 'films' | 'docs' | 'fun'. rutubeTitle заполняется валидатором (или впишите вручную для сверки).
+const allContent = [
+ { id:'539a180001d4e45169907440dc090395', rutubeTitle:'', title:'СВОИ. Баллада о войне', year:'2025', desc:'Реж. Артем Артемов', tags:'свои баллада война 2025', section:'films', age:'16+' },
+ { id:'ec42e7012e936fd9344416eb030822a8', rutubeTitle:'', title:'СВОИ. Баллада о войне — 2', year:'2025', desc:'Артем Артемов · 89 мин', tags:'свои баллада война 2025', section:'films', age:'16+' },
+ { id:'b590a94d80ac60d6a2900b65775c9963', rutubeTitle:'', title:'Таганрог — Серия 1', year:'2024', desc:'Военно-историческая драма', tags:'таганрог серия военный drama', section:'films', age:'16+' },
+ { id:'3cdd55ec8296cf3093fd8252fa685390', rutubeTitle:'', title:'Брестская крепость', year:'2010', desc:'Александр Котт', tags:'брестская крепость 2010 оборона', section:'films', age:'16+' },
+ { id:'8d48e91847c13088a9af5aa6fe807d96', rutubeTitle:'', title:'Офицеры', year:'1971', desc:'Киностудия Горького', tags:'офицеры 1971 советский', section:'films', age:'12+' },
+ { id:'09fa53133ba07d30195e6b243e101597', rutubeTitle:'', title:'Восхождение', year:'1976', desc:'Лариса Шепитько', tags:'восхождение 1976 шепитько', section:'films', age:'16+' },
+ { id:'7be99c8f5c930b532a101d372c43e185', rutubeTitle:'', title:'Они сражались за Родину', year:'1975', desc:'Сергей Бондарчук', tags:'они сражались родина 1975 бондарчук', section:'films', age:'12+' },
+ { id:'d6f214540607cdc5919d980703acec72', rutubeTitle:'', title:'Битва за Москву: Агрессия 1', year:'1985', desc:'Юрий Озеров', tags:'битва москву озеров 1985', section:'films', age:'12+' },
+ { id:'ba782d6ccd0199d3f1d457f87e479ec8', rutubeTitle:'', title:'Битва за Москву: Тайфун 1', year:'1985', desc:'Юрий Озеров', tags:'битва москву тайфун 1985', section:'films', age:'12+' },
+ { id:'98fb1adb7c14d0601bd0abae25fadf3a', rutubeTitle:'', title:'Великая война: Партизаны', year:'2010', desc:'Star Media', tags:'великая война партизаны документальный', section:'docs', age:'12+' },
+ { id:'3cfa4872ebcc23d9e1217176b80f9dda', rutubeTitle:'', title:'Великая война: Берлин', year:'2010', desc:'Star Media', tags:'великая война берлин документальный', section:'docs', age:'12+' },
+ { id:'f78108bdb07359483a12ee46d7b750ab', rutubeTitle:'', title:'Молчание ягнят', year:'1990', section:'fun', genre:'horror', desc:'Джоди Фостер, Энтони Хопкинс' },
+ { id:'e210f5c91d20eeb7c3b240fb34106dce', rutubeTitle:'', title:'Семь', year:'1995', section:'fun', genre:'horror', desc:'Дэвид Финчер' },
+ { id:'07cdd260a50723a49c32a531c65aaa1f', rutubeTitle:'', title:'Американский психопат', year:'2000', section:'fun', genre:'horror', desc:'Кристиан Бэйл' },
+ { id:'355f29b6069dce6d7b9fc06b84efe926', rutubeTitle:'', title:'Зодиак', year:'2007', section:'fun', genre:'horror', desc:'Дэвид Финчер' },
+ { id:'45f3753fb4854d00c04f2d9dfd291bc7', rutubeTitle:'', title:'Девушка с татуировкой дракона', year:'2011', section:'fun', genre:'horror', desc:'Дэниел Крейг' },
+ { id:'4a2767046ff61960819c95798f223009', rutubeTitle:'', title:'Искатели могил', year:'2011', section:'fun', genre:'horror', desc:'Мистика' },
+ { id:'6751daaab76ee813c48680a6760b7433', rutubeTitle:'', title:'Обряд', year:'2011', section:'fun', genre:'horror', desc:'Энтони Хопкинс' },
+ { id:'854ce20ade387f87041ca1e29e002448', rutubeTitle:'', title:'Интерстеллар', year:'2014', section:'fun', genre:'scifi', desc:'Кристофер Нолан' },
+ { id:'c8bea44b77771f8f65fe9c77f2775c22', rutubeTitle:'', title:'2001 год: Космическая одиссея', year:'1968', section:'fun', genre:'scifi', desc:'Стэнли Кубрик' },
+ { id:'204b52f643ead5d3c6fd96daef5bf26c', rutubeTitle:'', title:'Чужой', year:'1979', section:'fun', genre:'scifi', desc:'Ридли Скотт' },
+ { id:'74c7344092d5ba704629b63198c773b4', rutubeTitle:'', title:'Война миров', year:'2005', section:'fun', genre:'scifi', desc:'Стивен Спилберг' },
+ { id:'941e75b8fa7a972054a6b736ba448804', rutubeTitle:'', title:'Война миров Z', year:'2013', section:'fun', genre:'scifi', desc:'Брэд Питт' },
+ { id:'237074ca7690d1b7ffb34b7d2a8284b3', rutubeTitle:'', title:'Ио', year:'2019', section:'fun', genre:'scifi', desc:'Энтони Маки' },
+ { id:'cdfd04ba92fa094d31e6959d9f78854d', rutubeTitle:'', title:'Земля кочевников', year:'2020', section:'fun', genre:'drama', desc:'Оскар 2021' },
+ { id:'93f3c74ad659226a3888f431edaec91a', rutubeTitle:'', title:'Зимняя кость', year:'2010', section:'fun', genre:'drama', desc:'Дженнифер Лоуренс' },
+ { id:'66d3f904c84f73f3bfb15db38bfff989', rutubeTitle:'', title:'Общество снега', year:'2023', section:'fun', genre:'drama', desc:'Выживание в Андах' },
+ { id:'52da682da2cf090b195129eeab21656c', rutubeTitle:'', title:'Ирландец', year:'2019', section:'fun', genre:'drama', desc:'Мартин Скорсезе' },
+ { id:'5b3fd54894b7d276662b27eedda2cde5', rutubeTitle:'', title:'Война токов', year:'2017', section:'fun', genre:'drama', desc:'Тесла и Эдисон' },
+ { id:'fa0920feea1ee6b5f30fc789f1655bf4', rutubeTitle:'', title:'Инспектор Гаджет', year:'1999', section:'fun', genre:'comedy', desc:'Мэттью Бродерик' },
+ { id:'d7c943a04ee9c6a342e12002ecbf569e', rutubeTitle:'', title:'Зачарованная', year:'2007', section:'fun', genre:'comedy', desc:'Эми Адамс' },
+ { id:'5fabec636358f95fd58882ec4d171433', rutubeTitle:'', title:'Вокруг света за 80 дней', year:'2004', section:'fun', genre:'comedy', desc:'Джеки Чан' },
+ { id:'eb3709ef32b7a3e92766e77d42f5dac7', rutubeTitle:'', title:'Война невест', year:'2009', section:'fun', genre:'comedy', desc:'Энн Хэтэуэй' },
+ { id:'145188522089b1b2427094588b67c03c', rutubeTitle:'', title:'Ограбление по-итальянски', year:'2003', section:'fun', genre:'comedy', desc:'Марк Уолберг' },
+ { id:'db084c2ef211d6804688c8bb189fe6a4', rutubeTitle:'', title:'Огни большого города', year:'1931', section:'fun', genre:'comedy', desc:'Чарли Чаплин' },
+ { id:'cbf79bb5e0eae3b7a27969443d929dfc', rutubeTitle:'', title:'Король Лев', year:'1994', section:'fun', genre:'animation', desc:'Disney' },
+ { id:'0073e0c62fd08d5903cc94ee63abd270', rutubeTitle:'', title:'Красавица и чудовище', year:'1991', section:'fun', genre:'animation', desc:'Disney' },
+ { id:'6049ee64f8347e176476f19b3ed28471', rutubeTitle:'', title:'Тарзан', year:'1999', section:'fun', genre:'animation', desc:'Disney' },
+ { id:'579b220f359c6744d73d6e11a564e80e', rutubeTitle:'', title:'Мулан', year:'1998', section:'fun', genre:'animation', desc:'Disney' },
+ { id:'406a22fdb5ad159f397e284423695672', rutubeTitle:'', title:'Геркулес', year:'1997', section:'fun', genre:'animation', desc:'Disney' },
+ { id:'adb51e475e2ddb482bf40d67bd430917', rutubeTitle:'', title:'Планета сокровищ', year:'2002', section:'fun', genre:'animation', desc:'Disney' },
+ { id:'8506739df1d041dfa9befcaf6d105abf', rutubeTitle:'', title:'Сердце пармы', year:'2021', section:'fun', genre:'russian', desc:'История, драма' },
+ { id:'120225e9d33d3dc3b51a8f0581be5879', rutubeTitle:'', title:'Возраст любви', year:'1953', section:'fun', genre:'russian', desc:'Классика' }
 ];
 
 // ===== ТВ-КАНАЛЫ =====
@@ -419,41 +544,6 @@ const tvChannels = [
  { id:'13053e6f977f78e8caf3ac0239f972e8', name:'Звезда HD', group:'Федеральные', short:'ЗВHD' }
 ];
 
-// ===== РАЗВЛЕКАТЕЛЬНЫЕ =====
-const funMovies = [
- { id:'f78108bdb07359483a12ee46d7b750ab', title:'Молчание ягнят', year:'1990', genre:'horror', desc:'Джоди Фостер, Энтони Хопкинс' },
- { id:'e210f5c91d20eeb7c3b240fb34106dce', title:'Семь', year:'1995', genre:'horror', desc:'Дэвид Финчер' },
- { id:'07cdd260a50723a49c32a531c65aaa1f', title:'Американский психопат', year:'2000', genre:'horror', desc:'Кристиан Бэйл' },
- { id:'355f29b6069dce6d7b9fc06b84efe926', title:'Зодиак', year:'2007', genre:'horror', desc:'Дэвид Финчер' },
- { id:'45f3753fb4854d00c04f2d9dfd291bc7', title:'Девушка с татуировкой дракона', year:'2011', genre:'horror', desc:'Дэниел Крейг' },
- { id:'4a2767046ff61960819c95798f223009', title:'Искатели могил', year:'2011', genre:'horror', desc:'Мистика' },
- { id:'6751daaab76ee813c48680a6760b7433', title:'Обряд', year:'2011', genre:'horror', desc:'Энтони Хопкинс' },
- { id:'854ce20ade387f87041ca1e29e002448', title:'Интерстеллар', year:'2014', genre:'scifi', desc:'Кристофер Нолан' },
- { id:'c8bea44b77771f8f65fe9c77f2775c22', title:'2001 год: Космическая одиссея', year:'1968', genre:'scifi', desc:'Стэнли Кубрик' },
- { id:'204b52f643ead5d3c6fd96daef5bf26c', title:'Чужой', year:'1979', genre:'scifi', desc:'Ридли Скотт' },
- { id:'74c7344092d5ba704629b63198c773b4', title:'Война миров', year:'2005', genre:'scifi', desc:'Стивен Спилберг' },
- { id:'941e75b8fa7a972054a6b736ba448804', title:'Война миров Z', year:'2013', genre:'scifi', desc:'Брэд Питт' },
- { id:'237074ca7690d1b7ffb34b7d2a8284b3', title:'Ио', year:'2019', genre:'scifi', desc:'Энтони Маки' },
- { id:'cdfd04ba92fa094d31e6959d9f78854d', title:'Земля кочевников', year:'2020', genre:'drama', desc:'Оскар 2021' },
- { id:'93f3c74ad659226a3888f431edaec91a', title:'Зимняя кость', year:'2010', genre:'drama', desc:'Дженнифер Лоуренс' },
- { id:'66d3f904c84f73f3bfb15db38bfff989', title:'Общество снега', year:'2023', genre:'drama', desc:'Выживание в Андах' },
- { id:'52da682da2cf090b195129eeab21656c', title:'Ирландец', year:'2019', genre:'drama', desc:'Мартин Скорсезе' },
- { id:'5b3fd54894b7d276662b27eedda2cde5', title:'Война токов', year:'2017', genre:'drama', desc:'Тесла и Эдисон' },
- { id:'fa0920feea1ee6b5f30fc789f1655bf4', title:'Инспектор Гаджет', year:'1999', genre:'comedy', desc:'Мэттью Бродерик' },
- { id:'d7c943a04ee9c6a342e12002ecbf569e', title:'Зачарованная', year:'2007', genre:'comedy', desc:'Эми Адамс' },
- { id:'5fabec636358f95fd58882ec4d171433', title:'Вокруг света за 80 дней', year:'2004', genre:'comedy', desc:'Джеки Чан' },
- { id:'eb3709ef32b7a3e92766e77d42f5dac7', title:'Война невест', year:'2009', genre:'comedy', desc:'Энн Хэтэуэй' },
- { id:'145188522089b1b2427094588b67c03c', title:'Ограбление по-итальянски', year:'2003', genre:'comedy', desc:'Марк Уолберг' },
- { id:'db084c2ef211d6804688c8bb189fe6a4a', title:'Огни большого города', year:'1931', genre:'comedy', desc:'Чарли Чаплин' },
- { id:'cbf79bb5e0eae3b7a27969443d929dfc', title:'Король Лев', year:'1994', genre:'animation', desc:'Disney' },
- { id:'0073e0c62fd08d5903cc94ee63abd270', title:'Красавица и чудовище', year:'1991', genre:'animation', desc:'Disney' },
- { id:'6049ee64f8347e176476f19b3ed28471', title:'Тарзан', year:'1999', genre:'animation', desc:'Disney' },
- { id:'579b220f359c6744d73d6e11a564e80e', title:'Мулан', year:'1998', genre:'animation', desc:'Disney' },
- { id:'406a22fdb5ad159f397e284423695672', title:'Геркулес', year:'1997', genre:'animation', desc:'Disney' },
- { id:'adb51e475e2ddb482bf40d67bd430917', title:'Планета сокровищ', year:'2002', genre:'animation', desc:'Disney' },
- { id:'8506739df1d041dfa9befcaf6d105abf', title:'Сердце пармы', year:'2021', genre:'russian', desc:'История, драма' },
- { id:'120225e9d33d3dc3b51a8f0581be5879', title:'Возраст любви', year:'1953', genre:'russian', desc:'Классика' }
-];
 
 // ===== СОСТОЯНИЕ =====
 let tvMode=false, focusIndex=-1, focusableItems=[], playerOpen=false, currentMovieIndex=-1;
@@ -473,88 +563,6 @@ function universalBack(){
     return;
   }
   if (tvPlayerOverlayOpen) { if (tvBarOpen) { closeTVBar(); return; } tvExit(); }
-}
-
-// ===== VPN =====
-async function checkVPN(){
-  try {
-    const r = await fetch('https://ipwho.is/?fields=security,ip,country,connection');
-    const d = await r.json();
-    if (d.security && (d.security.is_vpn===true || d.security.is_proxy===true || d.security.is_tor===true)) { showVPNWarning(); return true; }
-    return false;
-  } catch(e){ return false; }
-}
-function showVPNWarning(){ document.getElementById('vpnWarning').classList.add('show'); document.body.style.overflow='hidden'; }
-
-// ===== ZIP ЛОКАЛЬНОГО ПЛЕЕРА =====
-async function downloadLocalPlayer(){
-  const btn = document.getElementById('downloadBtn');
-  const orig = btn.innerHTML;
-  btn.innerHTML = '⏳ Готовим архив...'; btn.disabled = true;
-  try {
-    const localHTML = `<!DOCTYPE html>
-<html lang="ru"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SufTube — Локальный плеер</title>
-<style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{background:#0a0a0f;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif}
-.container{max-width:1400px;margin:0 auto;padding:40px 20px}
-h1{color:#ffb84d;text-align:center;margin-bottom:12px;font-size:32px}
-.subtitle{text-align:center;color:#8a8a9a;margin-bottom:30px}
-.search{max-width:500px;margin:0 auto 30px}
-.search input{width:100%;padding:14px 20px;border-radius:12px;background:rgba(255,255,255,.06);color:#fff;border:2px solid transparent;outline:none;font-size:15px}
-.search input:focus{border-color:#ffb84d}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:20px}
-.card{background:#14141c;border-radius:16px;overflow:hidden;cursor:pointer;border:2px solid rgba(255,255,255,.05);transition:.3s}
-.card:hover{transform:translateY(-6px);border-color:#ffb84d}
-.poster{width:100%;aspect-ratio:16/9;background:#000;overflow:hidden}
-.poster img{width:100%;height:100%;object-fit:cover}
-.info{padding:16px 18px}.info h3{font-size:16px;margin-bottom:6px}.info p{color:#8a8a9a;font-size:13px}
-.ov{display:none;position:fixed;inset:0;background:#000;z-index:1000}.ov.open{display:block}
-.ov iframe{width:100%;height:100%;border:none}
-.exit{position:fixed;top:20px;left:20px;z-index:1100;background:rgba(10,10,15,.85);color:#fff;border:2px solid rgba(255,184,77,.4);border-radius:14px;padding:14px 24px;font-size:16px;font-weight:700;cursor:pointer;display:none}
-.exit.show{display:block}
-</style></head><body>
-<div class="container"><h1>🎬 SufTube</h1><p class="subtitle">Локальный плеер · Все фильмы в одном месте</p>
-<div class="search"><input type="text" id="search" placeholder="🔍 Поиск фильмов..." oninput="flt()"></div>
-<div class="grid" id="grid"></div></div>
-<div class="ov" id="ov"><iframe id="fr" src="" allow="autoplay; fullscreen; clipboard-write" allowfullscreen></iframe></div>
-<button class="exit" id="ex" onclick="cl()">← Назад</button>
-<script>
-var movies = ${JSON.stringify(movies.concat(funMovies))};
-var grid = document.getElementById('grid');
-function render(list){
-  grid.innerHTML = '';
-  list.forEach(function(m){
-    var c = document.createElement('div'); c.className = 'card';
-    c.innerHTML = '<div class="poster"><img src="https://rutube.ru/api/video/' + m.id + '/thumbnail/?redirect=1" onerror="this.style.display=\\'none\\'"></div><div class="info"><h3>' + m.title + '</h3><p>' + m.year + ' · ' + (m.desc||'') + '</p></div>';
-    c.onclick = function(){ op(m.id); };
-    grid.appendChild(c);
-  });
-}
-function op(id){ document.getElementById('fr').src = 'https://rutube.ru/play/embed/' + id + '/?autoplay=1'; document.getElementById('ov').classList.add('open'); document.getElementById('ex').classList.add('show'); }
-function cl(){ document.getElementById('fr').src = ''; document.getElementById('ov').classList.remove('open'); document.getElementById('ex').classList.remove('show'); }
-function flt(){ var q = document.getElementById('search').value.toLowerCase(); render(movies.filter(function(m){ return m.title.toLowerCase().indexOf(q) > -1 || (m.desc||'').toLowerCase().indexOf(q) > -1; })); }
-document.addEventListener('keydown', function(e){ if (e.key === 'Escape') cl(); });
-render(movies);
-<\/script></body></html>`;
-    const startBat = '@echo off\r\nchcp 65001 >nul\r\ntitle SufTube - Локальный плеер\r\necho ========================================\r\necho   SufTube - Локальный плеер\r\necho ========================================\r\necho.\r\necho Открываем плеер в браузере...\r\nstart "" "tv.html"\r\ntimeout /t 2 >nul\r\nexit';
-    const readme = 'SufTube — Локальный плеер\n========================================\n\n1. Распакуйте архив в любую папку\n2. Запустите start.bat (Windows) или откройте tv.html вручную в браузере\n3. Отключите VPN перед просмотром\n\nПриятного просмотра!';
-    const zip = new JSZip();
-    zip.file('tv.html', localHTML);
-    zip.file('start.bat', startBat);
-    zip.file('ЧИТАЙ_МЕНЯ.txt', readme);
-    const blob = await zip.generateAsync({ type:'blob' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href = url; a.download = 'SufTube-local.zip'; a.click();
-    URL.revokeObjectURL(url);
-    btn.innerHTML = '✅ Скачано! Распакуй и запусти start.bat';
-    setTimeout(()=>{ btn.innerHTML = orig; btn.disabled = false; }, 5000);
-  } catch(e){
-    console.error(e);
-    btn.innerHTML = '❌ Ошибка. Попробуй ещё раз';
-    setTimeout(()=>{ btn.innerHTML = orig; btn.disabled = false; }, 3000);
-  }
 }
 
 // ===== МОБ. МЕНЮ =====
@@ -579,66 +587,418 @@ function toggleAll(id, btn){
   btn.innerHTML = on ? 'Свернуть <b>←</b>' : 'Все <b>→</b>';
 }
 
+// ===== НАСТРОЙКИ =====
+const USE_FALLBACK = true;     // при ошибке Rutube показывать ссылку «Открыть на Rutube»
+const VIDEO_TIMEOUT = 5000;    // iframe не загрузился за 5 с → «Видео временно недоступно»
+const RUTUBE_TIMEOUT = 7000;   // iframe не загрузился за 7 с → «Rutube временно недоступен»
+const MAX_TV_AUTOSWITCH = 3;   // сколько каналов подряд пробуем при сбое ТВ
+const HISTORY_KEY = 'sufTubeHistory';
+const FAV_KEY = 'sufTubeFavorites';
+
+let currentIframe = null, currentTVIframe = null;
+let playStartedAt = 0, playStartPos = 0;
+
+// ===== localStorage (с защитой от ошибок) =====
+function loadJSON(key, def) { try { const v = JSON.parse(localStorage.getItem(key)); return v ?? def; } catch (e) { return def; } }
+function saveJSON(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); } catch (e) {} }
+
+function formatTime(sec) {
+  const h = Math.floor(sec / 3600), m = Math.floor(sec % 3600 / 60), s = String(Math.floor(sec % 60)).padStart(2, '0');
+  return h ? `${h}:${String(m).padStart(2, '0')}:${s}` : `${m}:${s}`;
+}
+const normalizeText = t => (t || '').toLowerCase().replace(/ё/g, 'е');
+
+// ===== Уведомление (toast) =====
+let toastTimer = null;
+function showToast(msg) {
+  let t = document.getElementById('toast');
+  if (!t) { t = document.createElement('div'); t.id = 'toast'; document.body.appendChild(t); }
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+// ===== БАГ №1: проверка соответствия id ↔ название =====
+// Вызов из консоли: validateContentIds(0) — проверить ВСЕ id.
+async function validateContentIds(limit = 3) {
+  allContent.forEach(m => {
+    if (!/^[0-9a-f]{32}$/.test(m.id)) console.warn(`[SufTube] Некорректный id (нужно 32 hex-символа): «${m.title}» → ${m.id}`);
+  });
+  const list = limit > 0 ? allContent.slice(0, limit) : allContent;
+  for (const m of list) {
+    try {
+      const r = await fetch(`https://rutube.ru/api/video/${m.id}/?format=json`);
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const d = await r.json();
+      m.rutubeTitle = d.title || '';
+      const rt = normalizeText(m.rutubeTitle);
+      const stems = normalizeText(m.title).split(/[^а-яa-z0-9]+/).filter(w => w.length > 3).map(w => w.slice(0, 5));
+      if (stems.some(st => rt.includes(st))) console.log(`[SufTube] ✓ «${m.title}» ↔ «${m.rutubeTitle}»`);
+      else console.warn(`[SufTube] ⚠ Не совпадает: «${m.title}» ↔ на Rutube «${m.rutubeTitle}» (id ${m.id})`);
+    } catch (e) {
+      console.info(`[SufTube] Не удалось проверить «${m.title}» (${e.message}). Проверьте вручную: https://rutube.ru/video/${m.id}/`);
+    }
+  }
+}
+
+// ===== БАГИ №3 и №5: iframe с контролем загрузки =====
+function createRutubeIframe(videoId, { startAt = 0, onLoad, onSoftFail, onHardFail } = {}) {
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'position:absolute;inset:0;';
+  const iframe = document.createElement('iframe');
+  iframe.src = `https://rutube.ru/play/embed/${videoId}/?autoplay=1` + (startAt > 5 ? `&t=${Math.floor(startAt)}` : '');
+  iframe.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border:none;';
+  iframe.setAttribute('allow', 'autoplay; fullscreen; clipboard-write');
+  iframe.allowFullscreen = true;
+
+  let loaded = false;
+  const timers = [];
+  const stop = () => timers.forEach(clearTimeout);
+
+  iframe.onload = () => { loaded = true; stop(); onLoad && onLoad(); };
+  iframe.onerror = () => { stop(); onSoftFail && onSoftFail(); };
+  timers.push(setTimeout(() => { if (!loaded) onSoftFail && onSoftFail(); }, VIDEO_TIMEOUT));
+  timers.push(setTimeout(() => { if (!loaded) onHardFail && onHardFail(); }, RUTUBE_TIMEOUT));
+
+  wrap.appendChild(iframe);
+  wrap.iframe = iframe;       // доступ к iframe для postMessage
+  wrap.cancel = stop;           // отмена таймеров при закрытии плеера
+  return wrap;
+}
+
+// Заглушка «видео недоступно» поверх плеера (+ уведомление)
+function showVideoError(msg = 'Видео временно недоступно', videoId = null, host = document.getElementById('playerOverlay')) {
+  hideVideoError(host);
+  const box = document.createElement('div');
+  box.className = 'video-error';
+  const link = (USE_FALLBACK && videoId)
+    ? `<a class="btn-rutube" href="https://rutube.ru/video/${videoId}/" target="_blank" rel="noopener">▶ Открыть на Rutube</a>` : '';
+  box.innerHTML = `<div class="ve-icon">📡</div><h3>${msg}</h3>
+    <div class="ve-actions">${link}<button class="btn-more" onclick="universalBack()">← Вернуться к списку</button></div>`;
+  host.appendChild(box);
+  showToast(msg);
+}
+function hideVideoError(host = document.getElementById('playerOverlay')) {
+  host.querySelectorAll('.video-error').forEach(el => el.remove());
+}
+
+// ===== БАГ №4: история просмотра =====
+function saveProgress() {
+  if (currentMovieIndex < 0) return;
+  const m = allContent[currentMovieIndex]; if (!m) return;
+  const history = loadJSON(HISTORY_KEY, []);
+  if (playFinished) { saveJSON(HISTORY_KEY, history.filter(h => h.id !== m.id)); return; }  // досмотрел — убираем из «Продолжить»
+  const elapsed = (Date.now() - playStartedAt) / 1000;
+  const prev = history.find(h => h.id === m.id);
+  if (elapsed < 15 && !prev) return;
+  const est = Math.round(playStartPos + elapsed);
+  const pos = elapsed < 15 && prev ? prev.lastPosition : (playerTime > playStartPos ? Math.round(playerTime) : est);
+  saveJSON(HISTORY_KEY, [{ id: m.id, title: m.title, timestamp: Date.now(), lastPosition: pos },
+                         ...history.filter(h => h.id !== m.id)].slice(0, 20));
+}
+function clearHistory() {
+  saveJSON(HISTORY_KEY, []);
+  renderContinue();
+  showToast('История просмотра очищена');
+}
+function renderContinue() {
+  const sec = document.getElementById('continueSection'), grid = document.getElementById('continueGrid');
+  const items = loadJSON(HISTORY_KEY, [])
+    .map(h => ({ h, i: allContent.findIndex(m => m.id === h.id) })).filter(x => x.i >= 0);
+  grid.innerHTML = '';
+  sec.style.display = items.length ? '' : 'none';
+  items.forEach(({ h, i }) => grid.appendChild(makeCard(i, '▶ ' + formatTime(h.lastPosition), { resume: true })));
+}
+
+// ===== Избранное =====
+const getFavs = () => loadJSON(FAV_KEY, []);
+function toggleFav(e, id) {
+  e.stopPropagation(); e.preventDefault();
+  const favs = getFavs(), on = !favs.includes(id);
+  saveJSON(FAV_KEY, on ? [id, ...favs] : favs.filter(x => x !== id));
+  document.querySelectorAll(`.fav-btn[data-id="${id}"]`).forEach(b => { b.classList.toggle('on', on); b.textContent = on ? '❤️' : '🤍'; });
+  renderFavs();
+}
+function renderFavs() {
+  const sec = document.getElementById('favSection'), grid = document.getElementById('favGrid');
+  const items = getFavs().map(id => allContent.findIndex(m => m.id === id)).filter(i => i >= 0);
+  grid.innerHTML = '';
+  sec.style.display = items.length ? '' : 'none';
+  items.forEach(i => grid.appendChild(makeCard(i, allContent[i].age || allContent[i].year)));
+}
+
+// ===================================================================
+// АТМОСФЕРА КИНОТЕАТРА: звуки, заставка, режим кино, финал, антракт
+// ===================================================================
+const SFX_VOLUME = 0.3;          // громкость звуков интерфейса
+const AMBIENT_VOLUME = 0.1;      // фоновый гул зала
+const INTERMISSION_DELAY = 120000; // 2 минуты паузы → «Антракт»
+const SOUND_KEY = 'sufTubeSoundEnabled';
+
+let soundEnabled = loadJSON(SOUND_KEY, true) !== false;
+let userInteracted = false;
+let introActive = false, introResolve = null, introTimers = [];
+let playerTime = 0, playerPaused = false, playFinished = false, endShown = false;
+let intermissionTimer = null, intermissionTick = null, intermissionVisible = false, intermissionShownAt = 0;
+let uiTimer = null, lastHoverAt = 0;
+
+// ---------- Звуки (всё в try/catch: ошибка файла не ломает плеер) ----------
+function safePlay(id, vol = SFX_VOLUME) {
+  if (!soundEnabled) return;
+  try {
+    const a = document.getElementById(id); if (!a) return;
+    a.volume = vol; a.currentTime = 0;
+    const p = a.play(); if (p && p.catch) p.catch(() => {});
+  } catch (e) {}
+}
+function stopSound(id) { try { const a = document.getElementById(id); if (a) { a.pause(); a.currentTime = 0; } } catch (e) {} }
+// Плавное затухание за ms миллисекунд
+function fadeOutSound(id, ms = 1000) {
+  try {
+    const a = document.getElementById(id); if (!a || a.paused) return;
+    const v0 = a.volume, steps = 20; let n = 0;
+    const t = setInterval(() => {
+      n++; a.volume = Math.max(0, v0 * (1 - n / steps));
+      if (n >= steps) { clearInterval(t); a.pause(); a.currentTime = 0; a.volume = v0; }
+    }, ms / steps);
+  } catch (e) {}
+}
+function playHoverSound() { const now = Date.now(); if (now - lastHoverAt < 120) return; lastHoverAt = now; safePlay('hoverSound'); }
+function playClickSound() { safePlay('clickSound'); }
+function playZapSound()   { safePlay('zapSound'); }
+
+// Переключатель «Звуки интерфейса» (сохраняется в localStorage)
+function updateSoundUI() {
+  const el = document.getElementById('soundToggle');
+  if (el) el.textContent = '🔊 Звуки интерфейса: ' + (soundEnabled ? 'Вкл' : 'Выкл');
+  const d = document.getElementById('soundToggleDesk');
+  if (d) d.textContent = soundEnabled ? '🔊' : '🔇';
+}
+function toggleSound() {
+  soundEnabled = !soundEnabled;
+  saveJSON(SOUND_KEY, soundEnabled);
+  updateSoundUI();
+  if (!soundEnabled) ['projectorSound','introMusic','intermissionSound','endSound','ambientSound','whooshSound'].forEach(stopSound);
+  updateAmbient();
+  showToast('Звуки интерфейса: ' + (soundEnabled ? 'включены' : 'выключены'));
+}
+
+// ---------- П.6. Амбиент: только в каталоге, после первого действия пользователя ----------
+function updateAmbient() {
+  try {
+    const a = document.getElementById('ambientSound'); if (!a) return;
+    const should = soundEnabled && userInteracted && !playerOpen && !tvPlayerOverlayOpen && !introActive;
+    if (should) { a.volume = AMBIENT_VOLUME; if (a.paused) { const p = a.play(); if (p && p.catch) p.catch(() => {}); } }
+    else if (!a.paused) a.pause();
+  } catch (e) {}
+}
+['pointerdown', 'keydown', 'touchstart'].forEach(ev => document.addEventListener(ev, () => {
+  if (!userInteracted) { userInteracted = true; updateAmbient(); }
+}, true));
+
+// ---------- П.1 + П.3. Заставка: «Наш кинотеатр представляет» → логотип → «Приятного просмотра» (2.5 c) ----------
+function playCinemaIntro() {
+  return new Promise(resolve => {
+    introActive = true; introResolve = resolve;
+    updateAmbient();                                     // амбиент глушим
+    const ov = document.getElementById('cinemaIntro');
+    const st = Array.from(ov.querySelectorAll('.intro-stage'));
+    st.forEach(x => x.classList.remove('on'));
+    ov.classList.add('show');
+    requestAnimationFrame(() => requestAnimationFrame(() => ov.classList.add('visible'))); // «свет гаснет»: opacity 0→1 за 0.8 c
+    safePlay('projectorSound', 0.3);
+    safePlay('introMusic', 0.25);
+    const at = (ms, fn) => introTimers.push(setTimeout(fn, ms));
+    at(100,  () => st[0].classList.add('on'));                                         // 0–1 c
+    at(1500, () => { st[0].classList.remove('on'); st[1].classList.add('on'); });     // 1–2 c
+    at(2500, () => { st[1].classList.remove('on'); st[2].classList.add('on'); });     // 2–2.5 c
+    at(3000, finishIntro);
+  });
+}
+// Завершение/пропуск заставки (клик или Enter)
+function finishIntro() {
+  if (!introActive) return;
+  introActive = false;
+  introTimers.forEach(clearTimeout); introTimers = [];
+  stopSound('projectorSound'); fadeOutSound('introMusic', 400);
+  const ov = document.getElementById('cinemaIntro');
+  ov.classList.remove('visible');                        // плавное исчезновение
+  setTimeout(() => { if (!introActive) ov.classList.remove('show'); }, 800);
+  if (introResolve) { introResolve(); introResolve = null; }
+}
+
+// ---------- П.2. Автоскрытие кнопок плеера через 3 c ----------
+function wakePlayerUI() {
+  if (!playerOpen) return;
+  const c = document.getElementById('playerControls');
+  c.classList.remove('ui-hidden');
+  clearTimeout(uiTimer);
+  uiTimer = setTimeout(() => c.classList.add('ui-hidden'), 3000);
+}
+['mousemove', 'touchstart', 'pointerdown'].forEach(ev => document.addEventListener(ev, onUserActivity, { passive: true }));
+function onUserActivity() {
+  wakePlayerUI();
+  // возврат пользователя из антракта (с небольшой задержкой, чтобы не закрыть сразу)
+  if (intermissionVisible && Date.now() - intermissionShownAt > 800) hideIntermission();
+}
+
+// Capture-обработчик клавиш: срабатывает раньше основного
+document.addEventListener('keydown', e => {
+  if (introActive && e.key === 'Enter') { e.preventDefault(); e.stopImmediatePropagation(); finishIntro(); return; }
+  if (document.body.classList.contains('cinema-mode') && e.key === 'Escape') {
+    e.preventDefault(); e.stopImmediatePropagation(); exitCinemaMode(); return;
+  }
+  onUserActivity();
+}, true);
+
+// ---------- Rutube Player API (postMessage): состояние, время, конец фильма ----------
+function postRutube(type, data) {
+  try { currentIframe.iframe.contentWindow.postMessage(JSON.stringify({ type, data: data || {} }), '*'); } catch (e) {}
+}
+window.addEventListener('message', e => {
+  try {
+    if (!currentIframe || !currentIframe.iframe || e.source !== currentIframe.iframe.contentWindow) return;
+    const msg = typeof e.data === 'string' ? JSON.parse(e.data) : e.data;
+    if (!msg || !msg.type) return;
+    const d = msg.data || {};
+    if (msg.type === 'player:currentTime' && typeof d.time === 'number') playerTime = d.time;
+    else if (msg.type === 'player:changeState') onPlayerState(String(d.state || ''));
+    else if (msg.type === 'player:playComplete') showEndScreen();     // п.5
+  } catch (err) {}
+});
+function onPlayerState(state) {
+  playerPaused = /pause/i.test(state);
+  const b = document.getElementById('pauseBtn'); if (b) b.textContent = playerPaused ? '▶' : '⏸';
+  if (playerPaused) { clearTimeout(intermissionTimer); intermissionTimer = setTimeout(showIntermission, INTERMISSION_DELAY); }  // п.7
+  else hideIntermission();
+}
+
+// ---------- П.4. Режим кино ----------
+function enterCinemaMode() {
+  document.body.classList.add('cinema-mode');
+  safePlay('whooshSound');
+  const h = document.getElementById('cinemaHint');
+  h.classList.add('show'); setTimeout(() => h.classList.remove('show'), 2000);
+}
+function exitCinemaMode() { document.body.classList.remove('cinema-mode'); wakePlayerUI(); }
+document.addEventListener('dblclick', () => { if (document.body.classList.contains('cinema-mode')) exitCinemaMode(); });
+document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement) exitCinemaMode(); });
+
+// ---------- П.7. Антракт ----------
+function showIntermission() {
+  if (!playerOpen || !playerPaused) return;
+  const ov = document.getElementById('intermissionOverlay');
+  let left = 300;                                        // обратный отсчёт 5:00
+  const render = () => { document.getElementById('intermissionTimer').textContent = formatTime(left); };
+  render();
+  ov.classList.add('show'); intermissionVisible = true; intermissionShownAt = Date.now();
+  safePlay('intermissionSound', 0.25);
+  clearInterval(intermissionTick);
+  intermissionTick = setInterval(() => { left = Math.max(0, left - 1); render(); }, 1000);
+}
+function hideIntermission() {
+  clearTimeout(intermissionTimer); clearInterval(intermissionTick);
+  if (!intermissionVisible) return;
+  intermissionVisible = false;
+  document.getElementById('intermissionOverlay').classList.remove('show');
+  fadeOutSound('intermissionSound', 1000);               // музыка затухает за 1 c
+}
+function resumeFromIntermission() { hideIntermission(); playerPaused = false; postRutube('player:play'); }
+
+// ---------- П.5. «Спасибо за просмотр» ----------
+function showEndScreen() {
+  if (endShown || !playerOpen) return;
+  endShown = true; playFinished = true;
+  hideIntermission(); exitCinemaMode();
+  document.getElementById('endScreenOverlay').classList.add('show');
+  document.getElementById('endRecs').classList.remove('show');
+  safePlay('endSound', 0.3);
+  // 3 случайных рекомендации (кроме только что просмотренного)
+  const cur = allContent[currentMovieIndex];
+  const pool = allContent.map((m, i) => i).filter(i => !cur || allContent[i].id !== cur.id);
+  for (let k = pool.length - 1; k > 0; k--) { const j = Math.floor(Math.random() * (k + 1)); [pool[k], pool[j]] = [pool[j], pool[k]]; }
+  const row = document.getElementById('endRecsRow'); row.innerHTML = '';
+  pool.slice(0, 3).forEach(i => {
+    const c = makeCard(i, allContent[i].age || allContent[i].year);
+    c.onclick = () => { closeEndScreen(); closePlayer(); openPlayer(i); };
+    row.appendChild(c);
+  });
+  setTimeout(() => { if (endShown) document.getElementById('endRecs').classList.add('show'); }, 2000);
+}
+function closeEndScreen() {
+  endShown = false; stopSound('endSound');
+  document.getElementById('endScreenOverlay').classList.remove('show');
+  document.getElementById('endRecs').classList.remove('show');
+}
+function endBackToCatalog() { closeEndScreen(); universalBack(); }
+
+// Сброс всех «кино»-оверлеев при закрытии плеера
+function resetCinemaUI() {
+  closeEndScreen(); hideIntermission();
+  document.body.classList.remove('cinema-mode', 'in-player');
+  clearTimeout(uiTimer);
+  playerPaused = false;
+  const b = document.getElementById('pauseBtn'); if (b) b.textContent = '⏸';
+}
+
 // ===== КАРТОЧКИ =====
-function cardHTML(m, badge){
-  const poster = `https://rutube.ru/api/video/${m.id}/thumbnail/?redirect=1`;
+function cardHTML(m, badge) {
+  const fav = getFavs().includes(m.id);
   return `<div class="card-poster">
-    <img src="${poster}" alt="${m.title}" loading="lazy" onerror="this.style.display='none'">
+    <img src="https://rutube.ru/api/video/${m.id}/thumbnail/?redirect=1" alt="${m.title}" loading="lazy" onerror="this.style.display='none'">
     <span class="age-badge">${badge}</span>
+    <button class="fav-btn${fav ? ' on' : ''}" data-id="${m.id}" onclick="toggleFav(event,'${m.id}')" aria-label="В избранное">${fav ? '❤️' : '🤍'}</button>
     <div class="card-title">${m.title}</div>
     <div class="card-overlay"><div class="play-icon">▶</div></div>
   </div>`;
 }
-function renderCards(){
+// Карточка по индексу в allContent
+function makeCard(i, badge, opts = {}) {
+  const m = allContent[i];
+  const card = document.createElement('div');
+  card.className = 'card'; card.dataset.index = i; card.tabIndex = 0;
+  card.innerHTML = cardHTML(m, badge);
+  card.onmouseenter = playHoverSound;
+  card.onclick = () => { playClickSound(); openPlayer(i, opts); };
+  return card;
+}
+function renderCards() {
   const filmsGrid = document.getElementById('filmsGrid'), docsGrid = document.getElementById('docsGrid'), newGrid = document.getElementById('newGrid');
-  filmsGrid.innerHTML = ''; docsGrid.innerHTML = ''; newGrid.innerHTML = '';
+  [filmsGrid, docsGrid, newGrid].forEach(g => g.innerHTML = '');
   let fc = 0, dc = 0;
-  movies.forEach((m, i) => {
-    if (m.fromFun) return;
-    const card = document.createElement('div');
-    card.className = 'card'; card.dataset.index = i;
-    card.dataset.tags = (m.tags || m.title + ' ' + m.desc).toLowerCase();
-    card.tabIndex = 0;
-    card.innerHTML = cardHTML(m, m.age || '12+');
-    card.onclick = () => { sourceTab = 'home'; openPlayer(i); };
-    if (m.category === 'films') { filmsGrid.appendChild(card); fc++; } else { docsGrid.appendChild(card); dc++; }
+  allContent.forEach((m, i) => {
+    if (m.section === 'films') { filmsGrid.appendChild(makeCard(i, m.age || '12+')); fc++; }
+    else if (m.section === 'docs') { docsGrid.appendChild(makeCard(i, m.age || '12+')); dc++; }
   });
-  // Новинки — свежие из развлекательных
-  funMovies.map((m, i) => ({ m, i })).sort((a, b) => b.m.year - a.m.year).slice(0, 10).forEach(({ m, i }) => {
-    const card = document.createElement('div');
-    card.className = 'card'; card.dataset.index = 'new_' + i;
-    card.dataset.tags = (m.title + ' ' + m.desc + ' ' + m.year).toLowerCase();
-    card.tabIndex = 0;
-    card.innerHTML = cardHTML(m, m.year);
-    card.onclick = () => { sourceTab = 'home'; openFunPlayer(i); sourceTab = 'home'; };
-    newGrid.appendChild(card);
-  });
+  // Новинки — 10 самых свежих из раздела fun
+  allContent.map((m, i) => ({ m, i })).filter(x => x.m.section === 'fun')
+    .sort((a, b) => b.m.year - a.m.year).slice(0, 10)
+    .forEach(({ m, i }) => newGrid.appendChild(makeCard(i, m.year)));
   document.getElementById('filmsCount').textContent = `(${fc})`;
   document.getElementById('docsCount').textContent = `(${dc})`;
-  updateFocusable();
+  renderContinue(); renderFavs(); updateFocusable();
 }
-function renderFunCards(){
+function renderFunCards() {
   const grid = document.getElementById('funGrid');
   grid.innerHTML = '';
-  funMovies.forEach((m, i) => {
+  const ages = { horror:'18+', drama:'16+', scifi:'16+', comedy:'12+', russian:'12+', animation:'6+' };
+  allContent.forEach((m, i) => {
+    if (m.section !== 'fun') return;
     if (currentGenreFilter !== 'all' && m.genre !== currentGenreFilter) return;
+    const fav = getFavs().includes(m.id);
     const card = document.createElement('div');
-    card.className = 'card fun-card'; card.dataset.index = 'fun_' + i; card.dataset.genre = m.genre; card.tabIndex = 0;
-    const age = { horror:'18+', drama:'16+', scifi:'16+', comedy:'12+', russian:'12+', animation:'6+' }[m.genre] || '12+';
-    card.innerHTML = `<div class="fun-poster"><img src="https://rutube.ru/api/video/${m.id}/thumbnail/?redirect=1" alt="${m.title}" loading="lazy" onerror="this.style.display='none'"><span class="fun-age">${age}</span></div>
+    card.className = 'card fun-card'; card.dataset.index = i; card.dataset.genre = m.genre; card.tabIndex = 0;
+    card.innerHTML = `<div class="fun-poster"><img src="https://rutube.ru/api/video/${m.id}/thumbnail/?redirect=1" alt="${m.title}" loading="lazy" onerror="this.style.display='none'"><span class="fun-age">${ages[m.genre] || '12+'}</span>
+      <button class="fav-btn${fav ? ' on' : ''}" data-id="${m.id}" onclick="toggleFav(event,'${m.id}')" aria-label="В избранное">${fav ? '❤️' : '🤍'}</button></div>
       <div class="fun-info"><div class="fun-text"><h3>${m.title} <span class="fun-year">${m.year}</span></h3><p>${m.desc}</p></div><div class="fun-play">▶</div></div>`;
-    card.onclick = () => openFunPlayer(i);
+    card.onmouseenter = playHoverSound;
+    card.onclick = () => { playClickSound(); openFunPlayer(i); };
     grid.appendChild(card);
   });
 }
-function openFunPlayer(index){
-  const m = funMovies[index]; if (!m) return;
-  const src = sourceTab;
-  const existing = movies.findIndex(x => x.id === m.id);
-  if (existing >= 0) openPlayer(existing);
-  else { movies.push({ ...m, category:'films', fromFun:true, tags:m.title.toLowerCase() + ' ' + m.desc.toLowerCase() }); openPlayer(movies.length - 1); }
-  sourceTab = funSectionActive ? 'fun' : src;
-}
+// Развлекательный фильм открывается тем же плеером — без дублей и push в массив
+// (openPlayer сам запускает заставку playCinemaIntro)
+function openFunPlayer(index) { openPlayer(index); }
 function filterByGenre(g){
   currentGenreFilter = g;
   document.querySelectorAll('.genre-btn').forEach(b => b.classList.toggle('active', b.dataset.genre === g));
@@ -670,23 +1030,49 @@ function updateRotateHint(){
 }
 
 // ===== ПЛЕЕР ФИЛЬМОВ =====
-async function openPlayer(index){
-  const m = movies[index]; if (!m) return;
+async function openPlayer(index, opts = {}) {
+  const m = allContent[index]; if (!m) return;
+  if (introActive) return;                       // заставка уже идёт
+  await playCinemaIntro();                       // пп. 1 и 3: «выключение света» + заставка (клик/Enter — пропуск)
   currentMovieIndex = index; playerOpen = true;
-  if (funSectionActive) sourceTab = 'fun'; else if (tvSectionActive) sourceTab = 'tv'; else if (!sourceTab) sourceTab = 'home';
-  document.getElementById('playerOverlay').classList.add('open');
+  document.body.classList.add('in-player'); updateAmbient();
+  sourceTab = funSectionActive ? 'fun' : tvSectionActive ? 'tv' : 'home';
+
+  // «Продолжить просмотр»: стартуем с сохранённой позиции
+  const saved = loadJSON(HISTORY_KEY, []).find(h => h.id === m.id);
+  const startAt = opts.resume && saved ? saved.lastPosition : 0;
+  playStartedAt = Date.now(); playStartPos = startAt;
+  playerTime = startAt; playerPaused = false; playFinished = false; endShown = false;
+
+  const host = document.getElementById('playerOverlay');
+  host.classList.add('open');
   document.getElementById('loader').classList.add('show');
   document.body.style.overflow = 'hidden';
-  document.getElementById('rutubePlayerContainer').innerHTML = `<iframe src="https://rutube.ru/play/embed/${m.id}/?autoplay=1" style="position:absolute;inset:0;width:100%;height:100%;border:none;" allow="autoplay; fullscreen; clipboard-write" allowfullscreen></iframe>`;
+  hideVideoError(host);
+
+  const container = document.getElementById('rutubePlayerContainer');
+  if (currentIframe) currentIframe.cancel();
+  container.innerHTML = '';
+  currentIframe = createRutubeIframe(m.id, {
+    startAt,
+    onLoad: () => hideVideoError(host),
+    onSoftFail: () => showVideoError('Видео временно недоступно', m.id, host),
+    onHardFail: () => showVideoError('Rutube временно недоступен. Попробуйте позже', m.id, host)
+  });
+  container.appendChild(currentIframe);
+
   setTimeout(() => {
     document.getElementById('loader').classList.remove('show');
     document.getElementById('playerControls').classList.add('show');
-    showUniversalBack();
+    showUniversalBack(); wakePlayerUI();
   }, 1200);
   await enterFullscreenLandscape(document.getElementById('playerStage'));
 }
-function closePlayer(){
+function closePlayer() {
+  saveProgress();                                   // сохраняем историю до сброса состояния
+  if (currentIframe) { currentIframe.cancel(); currentIframe = null; }
   exitFullscreenAll();
+  hideVideoError();
   document.getElementById('rutubePlayerContainer').innerHTML = '';
   document.getElementById('playerOverlay').classList.remove('open');
   document.getElementById('playerControls').classList.remove('show');
@@ -694,9 +1080,11 @@ function closePlayer(){
   hideUniversalBack();
   document.body.style.overflow = '';
   playerOpen = false; currentMovieIndex = -1;
+  resetCinemaUI(); updateAmbient();
+  renderContinue();
 }
-function rewind(s){ }
-function togglePause(){ }
+function rewind(seconds) { postRutube('player:relativelySeek', { time: seconds }); }
+function togglePause() { postRutube(playerPaused ? 'player:play' : 'player:pause'); }
 
 // ===== НАВИГАЦИЯ =====
 function setNav(active){
@@ -755,29 +1143,50 @@ function focusTVCard(index){
 }
 
 // ===== ТВ-ПЛЕЕР =====
-async function playTVChannel(index){
+async function playTVChannel(index, attempt = 0) {
   const ch = tvChannels[index]; if (!ch) return;
+  playZapSound();                                    // звук переключения канала
   currentTVIndex = index; tvFocus = index; sourceTab = 'tv';
+  const host = document.getElementById('tvPlayerOverlay');
   const stage = document.getElementById('tvPlayerStage');
-  stage.innerHTML = `<iframe src="https://rutube.ru/play/embed/${ch.id}/?autoplay=1" style="position:absolute;inset:0;width:100%;height:100%;border:none;" allow="autoplay; fullscreen" allowfullscreen></iframe>`;
+  if (currentTVIframe) currentTVIframe.cancel();
+  stage.innerHTML = '';
+  hideVideoError(host);
+
+  currentTVIframe = createRutubeIframe(ch.id, {
+    onLoad: () => hideVideoError(host),
+    // Канал не запустился → автопереключение на следующий (не больше MAX_TV_AUTOSWITCH раз)
+    onHardFail: () => {
+      if (attempt < MAX_TV_AUTOSWITCH) {
+        showToast(`«${ch.name}» не запустился — переключаю на следующий`);
+        playTVChannel((index + 1) % tvChannels.length, attempt + 1);
+      } else {
+        showVideoError('Rutube временно недоступен. Попробуйте позже', ch.id, host);
+      }
+    }
+  });
+  stage.appendChild(currentTVIframe);
+
   document.getElementById('tvChannelName').textContent = ch.name;
-  document.getElementById('tvPlayerOverlay').classList.add('open');
-  tvPlayerOverlayOpen = true;
+  host.classList.add('open');
+  tvPlayerOverlayOpen = true; updateAmbient();
   document.body.style.overflow = 'hidden';
   showUniversalBack();
   document.getElementById('tvBarHint').classList.remove('hidden');
-  await enterFullscreenLandscape(stage);
+  if (attempt === 0) await enterFullscreenLandscape(stage);
 }
 function tvChannelNext(){ playTVChannel((tvFocus + 1) % tvChannels.length); }
 function tvChannelPrev(){ playTVChannel((tvFocus - 1 + tvChannels.length) % tvChannels.length); }
-function tvExit(){
+function tvExit() {
   closeTVBar();
+  if (currentTVIframe) { currentTVIframe.cancel(); currentTVIframe = null; }
+  hideVideoError(document.getElementById('tvPlayerOverlay'));
   document.getElementById('tvPlayerStage').innerHTML = '';
   document.getElementById('tvPlayerOverlay').classList.remove('open');
-  tvPlayerOverlayOpen = false;
+  tvPlayerOverlayOpen = false; updateAmbient();
   hideUniversalBack();
   document.body.style.overflow = '';
-  if (document.fullscreenElement) document.exitFullscreen().catch(()=>{});
+  if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
   document.getElementById('rotateHint').classList.remove('show');
   closeFunSection(); openTVSection();
   setTimeout(() => focusTVCard(currentTVIndex >= 0 ? currentTVIndex : 0), 100);
@@ -824,50 +1233,53 @@ function navigateTVBar(dir){
 function selectTVBarChannel(){ if (tvBarOpen) playTVChannel(tvBarFocus); }
 
 // ===== ПОИСК =====
-function filterCards(){
+// Единый поиск по всему allContent (фильмы, документальные, развлекательные)
+function filterCards() {
   const query = document.getElementById('searchInput').value.toLowerCase().trim();
-  const cards = document.querySelectorAll('#mainContent .card');
   const noResults = document.getElementById('noResults');
-  const mainContent = document.getElementById('mainContent');
-  const hero = document.getElementById('hero');
-  let visible = 0;
+  const grid = document.getElementById('searchGrid');
+
   if (!query) {
-    cards.forEach(c => { c.style.display = ''; c.tabIndex = 0; });
-    document.querySelectorAll('#mainContent .section').forEach(s => s.style.display = '');
-    document.querySelector('.features').style.display = '';
-    noResults.style.display = 'none'; mainContent.style.display = ''; hero.style.display = '';
-    updateFocusable(); return;
+    document.body.classList.remove('searching');
+    noResults.style.display = 'none';
+    updateFocusable();
+    return;
   }
-  const words = query.split(/\s+/).filter(Boolean);
-  cards.forEach(card => {
-    const match = words.some(w => (card.dataset.tags || '').includes(w));
-    card.style.display = match ? '' : 'none';
-    card.tabIndex = match ? 0 : -1;
-    if (match) visible++;
+  if (tvSectionActive || funSectionActive) goHome();     // поиск всегда работает с главной
+
+  const words = query.split(/\s+/).filter(Boolean).map(normalizeText);
+  const found = allContent.map((m, i) => ({ m, i })).filter(({ m }) => {
+    const hay = normalizeText([m.tags, m.title, m.desc, m.year].join(' '));
+    return words.every(w => hay.includes(w));
   });
-  document.querySelectorAll('#mainContent .section').forEach(sec => {
-    const row = sec.querySelector('.scroll-row');
-    sec.style.display = Array.from(row.children).some(c => c.style.display !== 'none') ? '' : 'none';
-  });
-  document.querySelector('.features').style.display = 'none';
-  if (visible === 0) {
-    mainContent.style.display = 'none'; hero.style.display = 'none'; noResults.style.display = 'block';
+
+  document.body.classList.add('searching');
+  grid.innerHTML = '';
+  found.forEach(({ m, i }) => grid.appendChild(makeCard(i, m.age || m.year)));
+  document.getElementById('searchCount').textContent = `(${found.length})`;
+
+  if (found.length === 0) {
+    document.getElementById('searchSection').style.display = 'none';
+    noResults.style.display = 'block';
     document.getElementById('rutubeBtn').href = 'https://rutube.ru/search/?query=' + encodeURIComponent(query);
-  } else { mainContent.style.display = ''; hero.style.display = ''; noResults.style.display = 'none'; }
+  } else {
+    document.getElementById('searchSection').style.display = '';
+    noResults.style.display = 'none';
+  }
   updateFocusable();
 }
 function scrollToSection(id){ document.getElementById(id)?.scrollIntoView({ behavior:'smooth' }); }
-function playFirst(){
-  const i = movies.findIndex((m, idx) => { const c = document.querySelector(`#mainContent .card[data-index="${idx}"]`); return c && c.style.display !== 'none'; });
-  if (i >= 0) { sourceTab = 'home'; openPlayer(i); }
+function playFirst() {
+  const c = document.querySelector('#filmsGrid .card');
+  if (c) c.click();
 }
 
 // ===== ФОКУС =====
 function detectTVMode(){
   tvMode = window.innerWidth >= 1600 || /SmartTV|Tizen|WebOS|NetCast|BRAVIA|HbbTV|POV_TV|Android TV|AppleTV/i.test(navigator.userAgent);
 }
-function updateFocusable(){
-  focusableItems = Array.from(document.querySelectorAll('#mainContent .card')).filter(c => c.style.display !== 'none' && c.tabIndex !== -1);
+function updateFocusable() {
+  focusableItems = Array.from(document.querySelectorAll('#mainContent .card')).filter(c => c.offsetParent !== null && c.tabIndex !== -1);
   focusIndex = -1;
 }
 function setTVFocus(index){
@@ -927,8 +1339,8 @@ document.addEventListener('webkitfullscreenchange', () => { if (!document.webkit
 window.addEventListener('orientationchange', () => setTimeout(updateRotateHint, 300));
 window.addEventListener('resize', () => { detectTVMode(); updateFocusable(); updateRotateHint(); });
 
-document.addEventListener('DOMContentLoaded', async () => {
-  renderCards(); detectTVMode(); await checkVPN();
+document.addEventListener('DOMContentLoaded', () => {
+  updateSoundUI(); renderCards(); detectTVMode(); validateContentIds(3);   // БАГ №1: проверка первых 3 id (результат в консоли)
 });
 </script>
 </body>
